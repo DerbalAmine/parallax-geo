@@ -8,6 +8,7 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import type { Env, FileConfig, KeyRing } from './keys.js';
@@ -46,10 +47,20 @@ export function saveFileConfig(cwd: string, config: FileConfig): string {
   return file;
 }
 
-/** Résolution complète : environnement + fichier local. */
+/**
+ * Résolution complète, par priorité décroissante :
+ * variables d'environnement > .parallax/config.json du dossier courant >
+ * ~/.parallax/config.json (repli global — permet à `parallax init` lancé
+ * depuis le home de servir tous les audits, où qu'ils soient lancés).
+ */
 export function loadKeyRing(
   cwd: string,
   env: Env = process.env,
+  home: string = os.homedir(),
 ): KeyRing {
-  return resolveKeys(env, loadFileConfig(cwd));
+  const local = loadFileConfig(cwd);
+  const global = path.resolve(cwd) === path.resolve(home) ? {} : loadFileConfig(home);
+  return resolveKeys(env, {
+    keys: { ...global.keys, ...local.keys },
+  });
 }

@@ -4,6 +4,18 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Correctifs post-Phase 5 (2026-07-03)
+
+- **`parallax init` plantait au lancement** (`UnknownPromptTypeError`) :
+  inquirer ≥ 12 a renommé le type de prompt `list` en `select`. Seule
+  occurrence dans le code (`password` est toujours valide). Corrigé et
+  vérifié en conditions réelles (flux complet, config écrite).
+- **Repli global `~/.parallax/config.json`** : la config des clés n'était
+  lue que dans le dossier courant — un `parallax init` lancé depuis le home
+  était invisible pour un audit lancé ailleurs. Nouvelle priorité :
+  variables d'environnement > `.parallax/` du dossier courant >
+  `~/.parallax/` (home). Tests isolés du vrai home de la machine.
+
 ### Phase 5 — Pilier 5, visibilité mesurée (2026-07-03)
 
 - **Grille mise à jour avant développement** : prorata 2.1 (déjà documenté en

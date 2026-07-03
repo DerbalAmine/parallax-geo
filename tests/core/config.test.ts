@@ -49,11 +49,20 @@ describe('saveFileConfig', () => {
 });
 
 describe('loadKeyRing', () => {
+  // Home isolé : la machine de dev peut avoir un vrai ~/.parallax/config.json
+  let fakeHome: string;
+  beforeEach(() => {
+    fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'parallax-home-'));
+  });
+  afterEach(() => {
+    fs.rmSync(fakeHome, { recursive: true, force: true });
+  });
+
   it('fusionne fichier local et environnement, environnement prioritaire', () => {
     saveFileConfig(tmpDir, {
       keys: { claude: 'file-claude', serpapi: 'file-serp' },
     });
-    const ring = loadKeyRing(tmpDir, { ANTHROPIC_API_KEY: 'env-claude' });
+    const ring = loadKeyRing(tmpDir, { ANTHROPIC_API_KEY: 'env-claude' }, fakeHome);
     expect(ring.claude?.key).toBe('env-claude');
     expect(ring.claude?.source).toBe('env');
     expect(ring.serpapi?.key).toBe('file-serp');
@@ -61,6 +70,24 @@ describe('loadKeyRing', () => {
   });
 
   it('sans fichier ni environnement : trousseau vide, pas d’erreur', () => {
-    expect(loadKeyRing(tmpDir, {})).toEqual({});
+    expect(loadKeyRing(tmpDir, {}, fakeHome)).toEqual({});
+  });
+
+  it('replie sur ~/.parallax/config.json quand le dossier courant n’a pas de config', () => {
+    saveFileConfig(fakeHome, { keys: { gemini: 'home-gemini' } });
+    const ring = loadKeyRing(tmpDir, {}, fakeHome);
+    expect(ring.gemini?.key).toBe('home-gemini');
+    expect(ring.gemini?.source).toBe('config');
+  });
+
+  it('la config du dossier courant l’emporte sur celle du home', () => {
+    saveFileConfig(fakeHome, { keys: { claude: 'home-claude' } });
+    saveFileConfig(tmpDir, { keys: { claude: 'local-claude' } });
+    expect(loadKeyRing(tmpDir, {}, fakeHome).claude?.key).toBe('local-claude');
+  });
+
+  it('cwd = home : le fichier du home est lu une seule fois, sans conflit', () => {
+    saveFileConfig(fakeHome, { keys: { claude: 'home-claude' } });
+    expect(loadKeyRing(fakeHome, {}, fakeHome).claude?.key).toBe('home-claude');
   });
 });

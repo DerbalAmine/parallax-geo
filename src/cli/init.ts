@@ -44,7 +44,8 @@ export async function runInit(cwd: string = process.cwd()): Promise<void> {
     const alreadyStored = Boolean(keys[provider.id]);
     const { action } = await inquirer.prompt<{ action: string }>([
       {
-        type: 'list',
+        // inquirer ≥ 12 : le type historique « list » a été renommé « select »
+        type: 'select',
         name: 'action',
         message: `${provider.label}\n  ${chalk.dim('Débloque : ' + provider.unlocks)}`,
         choices: [
