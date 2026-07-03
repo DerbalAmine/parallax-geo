@@ -2,16 +2,18 @@
  * Sous-critère 2.1 — Hiérarchie Hn propre (5 points).
  *
  * Un seul H1 : 2 pts. Absence de saut de niveau (H1 → H3 sans H2) : 2 pts.
- * Titres contenant plus de 3 mots significatifs : 1 pt.
+ * Titres contenant plus de 3 mots significatifs : 1 point, noté au prorata :
+ * 1 point multiplié par (nombre de titres avec plus de 3 mots significatifs
+ * divisé par nombre total de titres de la page).
  *
  * Choix d'implémentation (documentés au CHANGELOG) :
  * - « mot significatif » = mot de 3 lettres ou plus, hors mots vides fr/en ;
- * - le point « titres > 3 mots significatifs » est accordé si la majorité
- *   stricte des titres de la page satisfait la règle ;
  * - une page sans aucun titre obtient 0 sur les trois volets.
  */
 
 import * as cheerio from 'cheerio';
+
+import { round1 } from '../core/types.js';
 
 const MOTS_VIDES = new Set([
   // français
@@ -69,7 +71,7 @@ export function evaluateHeadings(html: string): HeadingsEvaluation {
   const empty = headings.length === 0;
   const pointsH1 = !empty && h1Count === 1 ? 2 : 0;
   const pointsNoSkip = !empty && !hasLevelSkip ? 2 : 0;
-  const pointsWordy = !empty && wordyHeadingRatio > 0.5 ? 1 : 0;
+  const pointsWordy = round1(wordyHeadingRatio);
 
   return {
     h1Count,
@@ -79,6 +81,6 @@ export function evaluateHeadings(html: string): HeadingsEvaluation {
     pointsH1,
     pointsNoSkip,
     pointsWordy,
-    points: pointsH1 + pointsNoSkip + pointsWordy,
+    points: round1(pointsH1 + pointsNoSkip + pointsWordy),
   };
 }

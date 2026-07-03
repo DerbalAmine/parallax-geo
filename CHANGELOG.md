@@ -4,6 +4,43 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Phase 3 — Pilier 4, sous-critères 4.1 et 4.2 (2026-07-03)
+
+- **2.1 révisé (décision produit)** : le volet « titres > 3 mots significatifs »
+  passe de la règle de majorité à un prorata — 1 point × (titres avec plus de
+  3 mots significatifs / total des titres), cohérent avec le scoring
+  proportionnel de 1.1, 2.4, 3.2 et 3.3. La grille
+  (docs/scoring-methodology.md) a été mise à jour avec la formule exacte.
+- **4.1 cohérence NAP** : un élément est « cohérent » s'il est présent dans le
+  Schema.org Organization/LocalBusiness ET retrouvé dans le texte visible.
+  Texte comparé : footer (balise, classes/ids `footer`), complété par la page
+  contact du même domaine si un lien existe. Téléphones normalisés avant
+  comparaison (+33/0033 ↔ 0, séparateurs ignorés) ; adresse cohérente si le
+  code postal apparaît dans le texte (et la ville quand elle est déclarée),
+  à défaut la rue. Sans bloc Organization exploitable : 0 point, preuve
+  explicite « comparaison impossible ».
+- **4.2 E-E-A-T** : page à propos détectée sur le href ou le libellé des liens
+  (à-propos/about/qui-sommes-nous, accents ignorés) ; auteur via
+  `meta[name=author]` ou `author` JSON-LD (chaîne ou objet avec `name`) ;
+  SIRET cherché sur la page auditée puis sur la page « mentions légales » du
+  même domaine — mot-clé SIRET/SIREN suivi de 9 à 14 chiffres, ou motif
+  14 chiffres groupés 3-3-3-5 (un téléphone à 10 chiffres ne matche pas).
+- **4.3** figure déjà dans le rapport comme `non_teste` (flag --deep + clé
+  SerpAPI, implémentation à venir) pour que le schéma JSON soit stable.
+- **Pages annexes** : seuls les liens du même domaine sont suivis (contact,
+  mentions légales) — jamais de fetch externe au palier 0.
+- **Constat terrain (complypme.fr)** : le site déclare son NAP complet dans un
+  bloc `ProfessionalService` (sous-type Schema.org de LocalBusiness) que la
+  correspondance stricte de la grille ne reconnaît pas ⇒ 0/6 en 4.1 et 0/8 en
+  2.2 malgré des données présentes. Question ouverte : reconnaître les
+  sous-types officiels de Organization/LocalBusiness en v1 ? (décision
+  utilisateur attendue, voir résumé de phase).
+- **Validé sur sites réels** : anthropic.com 2/20 (pas de JSON-LD Organization,
+  pas de SIRET — attendu pour un site américain), legalstart.fr 2/20 (nom
+  cohérent uniquement), complypme.fr 6/20 dont 6/6 en E-E-A-T (à propos +
+  meta author + SIRET sur mentions légales). getcomplypme.com est une page de
+  parking Gandi : l'audit de référence utilise complypme.fr.
+
 ### Phase 2 — Piliers 1 et 2 (2026-07-03)
 
 `docs/scoring-methodology.md` est la source de vérité unique ; les choix ci-dessous

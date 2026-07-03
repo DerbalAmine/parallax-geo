@@ -19,7 +19,7 @@ export function auditSemantic(html: string): PilierResult {
     points_obtenus: headings.points,
     points_max: 5,
     methode:
-      'Parsing DOM : H1 unique (2 pts), aucun saut de niveau (2 pts), titres > 3 mots significatifs (1 pt)',
+      'Parsing DOM : H1 unique (2 pts), aucun saut de niveau (2 pts), titres > 3 mots significatifs (1 pt au prorata des titres)',
     preuve: `${headings.h1Count} H1 ; saut de niveau : ${headings.hasLevelSkip ? 'oui' : 'non'} ; ${Math.round(headings.wordyHeadingRatio * 100)} % des titres > 3 mots significatifs`,
   });
 

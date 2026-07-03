@@ -55,6 +55,27 @@ describe('evaluateHeadings (sous-critère 2.1)', () => {
     expect(res.pointsWordy).toBe(0);
   });
 
+  it('point « mots significatifs » noté au prorata des titres', () => {
+    const res = evaluateHeadings(
+      page(
+        '<h1>Guide complet comptabilité PME françaises</h1>' + // > 3 mots significatifs
+          '<h2>Contact</h2>', // court
+      ),
+    );
+    expect(res.pointsWordy).toBe(0.5); // 1 × (1/2)
+    expect(res.points).toBe(4.5);
+  });
+
+  it('le prorata est arrondi à une décimale', () => {
+    const res = evaluateHeadings(
+      page(
+        '<h1>Guide complet comptabilité PME françaises</h1>' +
+          '<h2>Contact</h2><h2>Accueil</h2>',
+      ),
+    );
+    expect(res.pointsWordy).toBe(0.3); // 1 × (1/3) arrondi
+  });
+
   it('page sans aucun titre : 0/5', () => {
     const res = evaluateHeadings(page('<p>du texte</p>'));
     expect(res.points).toBe(0);

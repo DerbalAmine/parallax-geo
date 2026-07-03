@@ -12,6 +12,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 
 import { auditAccessibility } from '../accessibility/index.js';
+import { auditAuthority } from '../authority/index.js';
 import { loadKeyRing } from '../core/config.js';
 import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
@@ -109,7 +110,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
 
   console.log(chalk.dim('Analyse en cours (robots.txt, llms.txt, rendu Playwright, DOM)…'));
 
-  const [accessibilite, semantique] = await Promise.all([
+  const [accessibilite, semantique, autorite] = await Promise.all([
     auditAccessibility({
       url: parsed.href,
       staticHtml: page.body,
@@ -117,17 +118,18 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
       renderer: renderWithPlaywright,
     }),
     Promise.resolve(auditSemantic(page.body)),
+    auditAuthority({ url: parsed.href, staticHtml: page.body, fetcher: httpFetch }),
   ]);
 
   printPilier('Pilier 1 · Accessibilité IA', accessibilite);
   printPilier('Pilier 2 · Structure sémantique', semantique);
   printPilierAVenir('Pilier 3 · Citabilité du contenu', 'Phase 4');
-  printPilierAVenir('Pilier 4 · Autorité et entité', 'Phase 3');
+  printPilier('Pilier 4 · Autorité et entité', autorite);
   printPilierAVenir('Pilier 5 · Visibilité mesurée', 'Phase 5');
 
-  const partiel = accessibilite.score + semantique.score;
+  const partiel = accessibilite.score + semantique.score + autorite.score;
   console.log(
-    chalk.bold(`\nScore partiel (piliers 1-2) : ${partiel}/40`) +
+    chalk.bold(`\nScore partiel (piliers 1, 2 et 4.1-4.2) : ${partiel}/52`) +
       chalk.dim(' — score global sur 70/100 points disponible en Phase 6\n'),
   );
 
@@ -143,7 +145,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
         accessibilite_ia: accessibilite,
         structure_semantique: semantique,
         citabilite_contenu: emptyPilier('citabilite_contenu'),
-        autorite_entite: emptyPilier('autorite_entite'),
+        autorite_entite: autorite,
         visibilite_mesuree: emptyPilier('visibilite_mesuree'),
       },
       recommandations: [],

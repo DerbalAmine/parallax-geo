@@ -10,34 +10,12 @@
  * l'analyse. Correspondance stricte avec les types listés par la grille.
  */
 
-import * as cheerio from 'cheerio';
+import { extractJsonLdObjects, typesOf, walkJsonLd } from '../core/jsonld.js';
 
 export function collectJsonLdTypes(html: string): Set<string> {
-  const $ = cheerio.load(html);
   const types = new Set<string>();
-
-  const collect = (node: unknown): void => {
-    if (Array.isArray(node)) {
-      for (const item of node) collect(item);
-      return;
-    }
-    if (typeof node !== 'object' || node === null) return;
-    const obj = node as Record<string, unknown>;
-    const t = obj['@type'];
-    if (typeof t === 'string') types.add(t);
-    else if (Array.isArray(t)) {
-      for (const item of t) if (typeof item === 'string') types.add(item);
-    }
-    for (const value of Object.values(obj)) collect(value);
-  };
-
-  $('script[type="application/ld+json"]').each((_, el) => {
-    const raw = $(el).text();
-    try {
-      collect(JSON.parse(raw));
-    } catch {
-      // Bloc JSON-LD invalide : ignoré.
-    }
+  walkJsonLd(extractJsonLdObjects(html), (obj) => {
+    for (const t of typesOf(obj)) types.add(t);
   });
   return types;
 }

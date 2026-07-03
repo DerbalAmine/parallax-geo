@@ -40,7 +40,7 @@ Implémentation : cheerio pour le HTML brut, playwright pour le rendu JS.
 
 ### 2.1 Hiérarchie Hn propre (5 points)
 
-Méthode : parsing DOM avec cheerio. Un seul H1 sur la page, 2 points. Absence de saut de niveau (H1 direct vers H3 sans H2), 2 points. Titres contenant plus de 3 mots significatifs, 1 point.
+Méthode : parsing DOM avec cheerio. Un seul H1 sur la page, 2 points. Absence de saut de niveau (H1 direct vers H3 sans H2), 2 points. Titres contenant plus de 3 mots significatifs : 1 point, noté au prorata : 1 point multiplié par (nombre de titres avec plus de 3 mots significatifs divisé par nombre total de titres de la page).
 
 ### 2.2 Données structurées Schema.org (8 points)
 
