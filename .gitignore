@@ -1,0 +1,21 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+
+# Clés API et configuration locale (jamais committées)
+.env
+.env.*
+.parallax/
+.geolint/
+
+# Cache SQLite (Pilier 5)
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Divers
+*.log
+.DS_Store
+coverage/

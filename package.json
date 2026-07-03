@@ -1,0 +1,49 @@
+{
+  "name": "parallax-geo",
+  "version": "0.1.0",
+  "description": "Audit GEO (Generative Engine Optimization) en ligne de commande — mesure la visibilité et la citabilité d'un site web par les LLM (ChatGPT, Claude, Perplexity, Gemini). Fonctionne sans clé API.",
+  "keywords": [
+    "geo",
+    "generative-engine-optimization",
+    "seo",
+    "llm",
+    "audit",
+    "cli"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "parallax": "./bin/parallax.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "chalk": "^5.6.2",
+    "cheerio": "^1.2.0",
+    "commander": "^15.0.0",
+    "inquirer": "^14.0.2",
+    "playwright": "^1.61.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/inquirer": "^9.0.10",
+    "@types/node": "^26.1.0",
+    "tsx": "^4.22.5",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
