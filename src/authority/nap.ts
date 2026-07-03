@@ -20,6 +20,7 @@ import * as cheerio from 'cheerio';
 
 import type { Fetcher } from '../core/fetch.js';
 import { extractJsonLdObjects, typesOf, walkJsonLd } from '../core/jsonld.js';
+import { isOrganizationType } from '../core/schema-types.js';
 import { extractText } from '../core/text.js';
 
 export interface SchemaAddress {
@@ -44,7 +45,7 @@ export function extractSchemaNap(html: string): SchemaNap | null {
   walkJsonLd(extractJsonLdObjects(html), (obj) => {
     if (nap) return;
     const types = typesOf(obj);
-    if (!types.includes('Organization') && !types.includes('LocalBusiness')) return;
+    if (!isOrganizationType(types)) return;
 
     const result: SchemaNap = {};
     const name = str(obj['name']);

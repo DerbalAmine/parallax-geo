@@ -21,6 +21,24 @@ describe('evaluateSchema (sous-critère 2.2)', () => {
     expect(res.pointsOrganization).toBe(3);
   });
 
+  it('les sous-types officiels de LocalBusiness comptent (ProfessionalService, Restaurant…)', () => {
+    for (const type of ['ProfessionalService', 'Restaurant', 'Plumber', 'LegalService']) {
+      const res = evaluateSchema(withJsonLd(`{"@type":"${type}"}`));
+      expect(res.pointsOrganization, type).toBe(3);
+    }
+  });
+
+  it('les sous-types officiels d\'Article comptent (NewsArticle, TechArticle, Report)', () => {
+    for (const type of ['NewsArticle', 'TechArticle', 'Report']) {
+      const res = evaluateSchema(withJsonLd(`{"@type":"${type}"}`));
+      expect(res.pointsArticle, type).toBe(2);
+    }
+  });
+
+  it('un type hors liste ne compte pas (WebSite)', () => {
+    expect(evaluateSchema(withJsonLd('{"@type":"WebSite"}')).points).toBe(0);
+  });
+
   it('FAQPage : 3 points, Article : 2 points, cumulables jusqu\'à 8', () => {
     const res = evaluateSchema(
       withJsonLd(

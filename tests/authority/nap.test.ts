@@ -70,6 +70,13 @@ describe('extractSchemaNap', () => {
     );
     expect(nap?.name).toBe('Cabinet Dupont');
   });
+
+  it('reconnaît les sous-types officiels de LocalBusiness (ProfessionalService)', () => {
+    const nap = extractSchemaNap(
+      page('{"@type":"ProfessionalService","name":"ComplyPME","telephone":"01 23 45 67 89"}', ''),
+    );
+    expect(nap?.name).toBe('ComplyPME');
+  });
 });
 
 describe('extractFooterText / findContactLink', () => {

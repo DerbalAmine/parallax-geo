@@ -7,10 +7,12 @@
  *
  * Les types sont collectés récursivement (y compris @graph et entités
  * imbriquées) ; un bloc au JSON invalide est ignoré sans faire échouer
- * l'analyse. Correspondance stricte avec les types listés par la grille.
+ * l'analyse. Les sous-types officiels courants de LocalBusiness et
+ * d'Article sont reconnus (liste statique : core/schema-types.ts).
  */
 
 import { extractJsonLdObjects, typesOf, walkJsonLd } from '../core/jsonld.js';
+import { isArticleType, isOrganizationType } from '../core/schema-types.js';
 
 export function collectJsonLdTypes(html: string): Set<string> {
   const types = new Set<string>();
@@ -30,11 +32,9 @@ export interface SchemaEvaluation {
 
 export function evaluateSchema(html: string): SchemaEvaluation {
   const types = collectJsonLdTypes(html);
-  const pointsOrganization =
-    types.has('Organization') || types.has('LocalBusiness') ? 3 : 0;
+  const pointsOrganization = isOrganizationType(types) ? 3 : 0;
   const pointsFaq = types.has('FAQPage') ? 3 : 0;
-  const pointsArticle =
-    types.has('Article') || types.has('BlogPosting') ? 2 : 0;
+  const pointsArticle = isArticleType(types) ? 2 : 0;
   return {
     types: [...types].sort(),
     pointsOrganization,

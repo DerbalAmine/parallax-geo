@@ -13,13 +13,15 @@ import { Command } from 'commander';
 
 import { auditAccessibility } from '../accessibility/index.js';
 import { auditAuthority } from '../authority/index.js';
+import { buildClaudeClassifier } from '../citability/direct-answers.js';
+import { auditCitability } from '../citability/index.js';
 import { loadKeyRing } from '../core/config.js';
 import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
 import { renderWithPlaywright } from '../core/render.js';
 import { niveau } from '../core/scoring.js';
 import type { Rapport } from '../core/types.js';
-import { emptyPilier } from '../core/types.js';
+import { emptyPilier, round1 } from '../core/types.js';
 import { auditSemantic } from '../semantic/index.js';
 import { runInit } from './init.js';
 import { printPilier, printPilierAVenir } from './report.js';
@@ -110,7 +112,8 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
 
   console.log(chalk.dim('Analyse en cours (robots.txt, llms.txt, rendu Playwright, DOM)…'));
 
-  const [accessibilite, semantique, autorite] = await Promise.all([
+  const withClaude = Boolean(options.withClaude && ring.claude);
+  const [accessibilite, semantique, autorite, citabilite] = await Promise.all([
     auditAccessibility({
       url: parsed.href,
       staticHtml: page.body,
@@ -119,18 +122,34 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
     }),
     Promise.resolve(auditSemantic(page.body)),
     auditAuthority({ url: parsed.href, staticHtml: page.body, fetcher: httpFetch }),
+    auditCitability({
+      url: parsed.href,
+      staticHtml: page.body,
+      ...(withClaude
+        ? { classifier: buildClaudeClassifier(ring.claude!.key) }
+        : {
+            classifierAbsentReason: options.withClaude
+              ? 'clé API Claude absente (parallax init)'
+              : 'flag --with-claude non passé',
+          }),
+    }),
   ]);
 
   printPilier('Pilier 1 · Accessibilité IA', accessibilite);
   printPilier('Pilier 2 · Structure sémantique', semantique);
-  printPilierAVenir('Pilier 3 · Citabilité du contenu', 'Phase 4');
+  printPilier('Pilier 3 · Citabilité du contenu', citabilite);
   printPilier('Pilier 4 · Autorité et entité', autorite);
   printPilierAVenir('Pilier 5 · Visibilité mesurée', 'Phase 5');
 
-  const partiel = accessibilite.score + semantique.score + autorite.score;
+  const partiel = round1(
+    accessibilite.score + semantique.score + autorite.score + citabilite.score,
+  );
+  const maxPalier = withClaude ? 77 : 70;
   console.log(
-    chalk.bold(`\nScore partiel (piliers 1, 2 et 4.1-4.2) : ${partiel}/52`) +
-      chalk.dim(' — score global sur 70/100 points disponible en Phase 6\n'),
+    chalk.bold(`\nScore (palier ${withClaude ? '1' : '0'}) : ${partiel}/${maxPalier}`) +
+      chalk.dim(
+        ' — hors 4.3 (--deep) et Pilier 5 (--visibility) ; score /100 et niveaux en Phase 6\n',
+      ),
   );
 
   if (options.json) {
@@ -144,7 +163,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
       piliers: {
         accessibilite_ia: accessibilite,
         structure_semantique: semantique,
-        citabilite_contenu: emptyPilier('citabilite_contenu'),
+        citabilite_contenu: citabilite,
         autorite_entite: autorite,
         visibilite_mesuree: emptyPilier('visibilite_mesuree'),
       },

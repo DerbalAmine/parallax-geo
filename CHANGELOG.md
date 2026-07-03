@@ -4,6 +4,53 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Phase 4 — Pilier 3 complet + sous-types Schema.org (2026-07-03)
+
+- **Sous-types Schema.org reconnus (décision produit, Option 1)** : liste
+  statique et documentée dans `src/core/schema-types.ts` — sous-types
+  officiels de LocalBusiness (ProfessionalService, LegalService, Attorney,
+  AccountingService, Restaurant, Store, MedicalBusiness, RealEstateAgent,
+  HomeAndConstructionBusiness, Plumber, Electrician) et d'Article
+  (NewsArticle, TechArticle, Report). Justification : la correspondance
+  stricte pénalisait les PME utilisant un sous-type légitime (constat
+  complypme.fr : NAP complet dans un `ProfessionalService`, noté 0). Une
+  liste statique reste prévisible et extensible en PR séparée, contrairement
+  à un parcours du graphe Schema.org. Effet mesuré : complypme.fr passe de
+  0/8 à 3/8 en 2.2 et de 0/6 à 2/6 en 4.1.
+- **3.2 chiffres sourcés** : 1 point par data point sourcé pour 1000 mots
+  (densité 7/1000 ⇒ plafond de 7 pts). Les liens externes sont matérialisés
+  par un marqueur injecté dans le texte pour mesurer la proximité en
+  caractères ; expressions de source reconnues : selon, source, d'après,
+  étude/rapport/chiffres de… Data point = pourcentage, montant (€, millions…),
+  année 19xx/20xx ou nombre ≥ 2 chiffres.
+- **3.3 définitions** : 1 point par définition, plafonné à 6. Sujet court
+  (≤ 80 caractères) + verbe définitoire (est un/une, est le/la, sont des,
+  désigne, se définit comme) en tout début de paragraphe (p, li, dd), phrase
+  complète > 15 mots.
+- **3.4 fraîcheur** : sources acceptées — meta article:modified_time /
+  article:published_time / og:updated_time, balise <time datetime>, pattern
+  texte « mis à jour le » avec dates françaises (12 mars 2024, 03/02/2026).
+  La date la plus récente gagne ; « entre 6 et 12 mois » lu comme [6, 12]
+  inclus ; dates construites en UTC (bug de fuseau détecté par les tests).
+- **3.1 réponses directes** : un seul appel API groupé pour toutes les
+  sections (au lieu d'un appel par section — même classification, coût et
+  latence réduits), plafonné à 20 sections par page. Modèle
+  `claude-haiku-4-5` via le SDK officiel `@anthropic-ai/sdk`, conformément
+  au « appel API Claude léger » de la grille. Le classificateur est
+  injectable : aucun appel réseau dans les tests. Toute erreur API (clé
+  invalide, rate limit…) marque le critère `non_teste` sans faire échouer
+  l'audit ; sans flag --with-claude ou sans clé, la preuve précise la raison.
+- **CLI** : les quatre piliers palier 0/1 étant implémentés, le score
+  affiché devient significatif — x/70 (palier 0) ou x/77 (--with-claude),
+  hors 4.3 et Pilier 5. Le score /100 avec plafond et niveaux arrive en
+  Phase 6.
+- **Sites réels (palier 0, Pilier 3)** : complypme.fr 2.9/25, legalstart.fr
+  5.1/25, anthropic.com 7/25 (7/7 en 3.2 grâce à des chiffres systématiquement
+  sourcés — cohérent avec sa réputation de citabilité). Limite connue : le
+  chemin API réel du 3.1 n'a pas pu être exercé en live (aucune clé Claude
+  sur la machine de dev) ; couvert par tests unitaires (prompt, parsing,
+  erreurs, prorata).
+
 ### Phase 3 — Pilier 4, sous-critères 4.1 et 4.2 (2026-07-03)
 
 - **2.1 révisé (décision produit)** : le volet « titres > 3 mots significatifs »
