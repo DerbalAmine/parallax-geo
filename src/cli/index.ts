@@ -6,12 +6,22 @@
  *   parallax init          Assistant de configuration des clés API.
  */
 
+import fs from 'node:fs';
+
 import chalk from 'chalk';
 import { Command } from 'commander';
 
+import { auditAccessibility } from '../accessibility/index.js';
 import { loadKeyRing } from '../core/config.js';
+import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
+import { renderWithPlaywright } from '../core/render.js';
+import { niveau } from '../core/scoring.js';
+import type { Rapport } from '../core/types.js';
+import { emptyPilier } from '../core/types.js';
+import { auditSemantic } from '../semantic/index.js';
 import { runInit } from './init.js';
+import { printPilier, printPilierAVenir } from './report.js';
 
 const program = new Command();
 
@@ -84,13 +94,68 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
     );
   }
 
-  console.log(chalk.bold(`\nParallax — audit GEO de ${parsed.href}\n`));
+  console.log(chalk.bold(`\nParallax — audit GEO de ${parsed.href}`));
+
+  const page = await httpFetch(parsed.href);
+  if (!page.ok) {
+    console.error(
+      chalk.red(
+        `\nImpossible de récupérer la page (HTTP ${page.status || 'réseau injoignable'}).`,
+      ),
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(chalk.dim('Analyse en cours (robots.txt, llms.txt, rendu Playwright, DOM)…'));
+
+  const [accessibilite, semantique] = await Promise.all([
+    auditAccessibility({
+      url: parsed.href,
+      staticHtml: page.body,
+      fetcher: httpFetch,
+      renderer: renderWithPlaywright,
+    }),
+    Promise.resolve(auditSemantic(page.body)),
+  ]);
+
+  printPilier('Pilier 1 · Accessibilité IA', accessibilite);
+  printPilier('Pilier 2 · Structure sémantique', semantique);
+  printPilierAVenir('Pilier 3 · Citabilité du contenu', 'Phase 4');
+  printPilierAVenir('Pilier 4 · Autorité et entité', 'Phase 3');
+  printPilierAVenir('Pilier 5 · Visibilité mesurée', 'Phase 5');
+
+  const partiel = accessibilite.score + semantique.score;
   console.log(
-    chalk.dim(
-      'Les piliers d\'analyse arrivent en Phase 2 (accessibilité IA, structure sémantique). ' +
-        'Squelette CLI en place.',
-    ),
+    chalk.bold(`\nScore partiel (piliers 1-2) : ${partiel}/40`) +
+      chalk.dim(' — score global sur 70/100 points disponible en Phase 6\n'),
   );
+
+  if (options.json) {
+    const rapport: Rapport = {
+      url: parsed.href,
+      audited_at: new Date().toISOString(),
+      langue_detectee: 'indeterminee',
+      score_global: partiel,
+      niveau: niveau(partiel),
+      plafond_applique: false,
+      piliers: {
+        accessibilite_ia: accessibilite,
+        structure_semantique: semantique,
+        citabilite_contenu: emptyPilier('citabilite_contenu'),
+        autorite_entite: emptyPilier('autorite_entite'),
+        visibilite_mesuree: emptyPilier('visibilite_mesuree'),
+      },
+      recommandations: [],
+    };
+    fs.writeFileSync(options.json, JSON.stringify(rapport, null, 2) + '\n');
+    console.log(chalk.dim(`Rapport JSON écrit : ${options.json}`));
+  }
+  if (options.markdown) {
+    console.log(
+      chalk.yellow('Export markdown : disponible en Phase 6.'),
+    );
+  }
 }
 
 await program.parseAsync(process.argv);

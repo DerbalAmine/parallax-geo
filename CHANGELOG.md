@@ -4,6 +4,39 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Phase 2 — Piliers 1 et 2 (2026-07-03)
+
+`docs/scoring-methodology.md` est la source de vérité unique ; les choix ci-dessous
+comblent les points que la grille laisse ouverts, sans en modifier les barèmes.
+
+- **Analyseurs injectables** : chaque pilier reçoit son `Fetcher` (réseau) et son
+  `Renderer` (Playwright) en paramètre au lieu de les importer — les tests tournent
+  sans réseau ni navigateur, et le CLI branche les implémentations réelles.
+- **1.1 robots.txt** : sémantique standard appliquée — un bot obéit à son bloc
+  spécifique s'il existe, sinon au bloc `User-agent: *`, sinon il est autorisé.
+  Un robots.txt absent ou injoignable vaut « aucun blocage » (8/8). Seul un
+  `Disallow: /` exact compte comme blocage, conformément à la grille (un
+  `Disallow: /private` ne pénalise pas).
+- **1.3 sans JS** : borne « ratio entre 0.4 et 0.8 » lue comme [0.4, 0.8] ⇒ 4 pts,
+  le 7 pts exigeant strictement > 0.8. Page dont le rendu ne produit aucun texte :
+  ratio 1 (rien ne dépend de JS). Si le navigateur Playwright n'est pas installé,
+  le critère est marqué `non_teste` au lieu de faire échouer l'audit.
+- **2.1 « mots significatifs »** : mot de ≥ 3 lettres hors liste de mots vides
+  fr/en ; le point est accordé si la majorité stricte des titres dépasse 3 mots
+  significatifs. Page sans aucun titre : 0/5.
+- **2.2 Schema.org** : correspondance stricte avec les types listés par la grille
+  (Organization, LocalBusiness, FAQPage, Article, BlogPosting) — les sous-types
+  (NewsArticle…) ne comptent pas en v1. Types collectés récursivement (dont
+  `@graph` et `@type` en tableau) ; bloc JSON invalide ignoré silencieusement.
+- **2.4 Q/R** : 1 point par pattern détecté, plafonné à 4. Une « réponse » = au
+  moins 80 caractères de texte après la question dans la fenêtre des 200, coupée
+  à la question suivante pour ne pas compter les listes de questions.
+- **Plafond conditionnel** (`applyPlafond`) : `plafond_applique` est vrai dès que
+  le Pilier 1 est sous 10/20, même si le score total est déjà ≤ 40 — le message
+  d'avertissement de la grille doit s'afficher dans tous les cas.
+- **Validé sur sites réels** : anthropic.com (19/40) et legalstart.fr (25/40),
+  scores différenciés et preuves cohérentes.
+
 ### Phase 1 — Mise en place du projet (2026-07-03)
 
 - **Nom de package npm : `parallax-geo`** (le binaire reste `parallax`). Le nom `parallax`
