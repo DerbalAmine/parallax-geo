@@ -4,6 +4,56 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Phase 5 — Pilier 5, visibilité mesurée (2026-07-03)
+
+- **Grille mise à jour avant développement** : prorata 2.1 (déjà documenté en
+  Phase 3, vérifié), reconnaissance des sous-types Schema.org en 2.2 et 4.1
+  (renvoi vers src/core/schema-types.ts), quatre fournisseurs cités au
+  Pilier 5 (Claude, OpenAI, Gemini, Perplexity), et schéma exact du fichier
+  de requêtes ICP ajouté à la section 5.1.
+- **Fichier de requêtes ICP** : YAML par défaut (dépendance `yaml`), JSON
+  accepté si l'extension est .json. Validation stricte avec messages
+  actionnables (`QueriesFileError`) : brand/domain non vides, queries non
+  vide, text obligatoire, category optionnelle. Le domaine est normalisé
+  (https://, chemin et casse retirés). Exemple : examples/queries.example.yaml
+  (domaine complypme.fr — le site réellement en ligne, getcomplypme.com étant
+  une page de parking).
+- **Fournisseurs** : modèles volontairement économiques — claude-haiku-4-5,
+  gpt-4o-mini, gemini-2.5-flash, sonar (Perplexity). Claude passe par le SDK
+  officiel, les trois autres par leur API REST (fetch natif, timeout 60 s).
+  Seuls les fournisseurs avec clé sont interrogés ; les autres apparaissent
+  dans la preuve comme « non testés, clé API absente ».
+- **Rate limiting explicite** par fournisseur : intervalle minimal entre deux
+  appels (Gemini 6,5 s — palier gratuit ≈ 10 req/min ; Claude/OpenAI 1 s ;
+  Perplexity 1,5 s), horloge et sommeil injectables pour des tests instantanés.
+  Appels strictement séquentiels, conformément à la grille.
+- **Cache SQLite** : `.parallax/cache.sqlite` (ignoré par git), clé =
+  (fournisseur:modèle, requête, jour UTC). Un run répété le même jour ne
+  refait aucun appel ; un autre jour invalide le cache. Vérifié en réel :
+  second run complet en ~2 s, zéro appel API.
+- **Détection de marque** : comparaison sur formes compactées (minuscules,
+  sans accents ni séparateurs) pour tolérer « Comply PME » / « comply-pme » ;
+  domaine complet et racine de domaine (≥ 4 caractères) ; fuzzy matching
+  Levenshtein avec tolérance de 20 % de la longueur de la marque (min. 1) sur
+  mots et bigrammes. Position = rang du premier élément de liste (numérotée
+  ou à puces) citant la marque ; position moyenne sur l'ensemble des réponses.
+- **Scoring** : taux de citation = citations / réponses réussies ; score =
+  taux × 15, arrondi à une décimale. Un appel en échec (429, 401…) est exclu
+  du dénominateur et compté comme échec dans la preuve ; si toutes les
+  requêtes échouent, le critère passe `non_teste` avec le premier message
+  d'erreur. La note de transparence méthodologique de la grille est affichée
+  dans chaque rapport où le Pilier 5 tourne.
+- **CLI** : nouveau flag `--queries <fichier>` ; `--visibility` sans fichier
+  ou sans clé LLM n'interrompt jamais l'audit (critère non testé avec la
+  raison). Score affiché sur 70/77/85/92 selon les paliers actifs.
+- **Validation réelle (complypme.fr)** : orchestration exercée avec la clé
+  Claude réelle — 5 requêtes ICP, 0/5 citations (résultat plausible pour une
+  marque récente ; c'est précisément ce que l'outil doit mesurer). OpenAI :
+  variable présente mais vide dans l'environnement de test ⇒ correctement
+  détectée absente. Gemini : pas encore validé en réel — la seule clé Google
+  disponible est restreinte à Custom Search (403 sur generativelanguage) ;
+  à re-tester dès qu'une clé AI Studio (palier gratuit) est fournie.
+
 ### Phase 4 — Pilier 3 complet + sous-types Schema.org (2026-07-03)
 
 - **Sous-types Schema.org reconnus (décision produit, Option 1)** : liste

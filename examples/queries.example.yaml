@@ -1,0 +1,24 @@
+# Fichier de requêtes ICP pour le Pilier 5 (parallax audit <url> --visibility --queries <fichier>)
+#
+# - brand   : le nom de marque à détecter dans les réponses des LLM
+# - domain  : le domaine du site (détecté aussi via sa racine, ex. « complypme »)
+# - queries : les requêtes représentatives de votre client idéal (ICP),
+#             telles qu'un prospect les poserait à ChatGPT, Claude, Gemini ou Perplexity.
+#             `category` est un libellé libre, optionnel, pour vos analyses.
+#
+# Conseil : 5 à 15 requêtes suffisent. Chaque requête est envoyée à chaque
+# fournisseur configuré ; les réponses sont mises en cache une journée.
+
+brand: "ComplyPME"
+domain: "complypme.fr"
+queries:
+  - text: "meilleur outil de conformité AI Act pour PME"
+    category: "conformite"
+  - text: "comment savoir si mon entreprise est visible sur ChatGPT"
+    category: "geo"
+  - text: "qui peut m'accompagner pour mettre mon site en conformité RGPD en France"
+    category: "conformite"
+  - text: "audit GEO gratuit pour PME française"
+    category: "geo"
+  - text: "studio de conformité réglementaire pour petites entreprises françaises"
+    category: "conformite"

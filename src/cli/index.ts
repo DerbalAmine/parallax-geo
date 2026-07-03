@@ -7,6 +7,7 @@
  */
 
 import fs from 'node:fs';
+import path from 'node:path';
 
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -23,6 +24,10 @@ import { niveau } from '../core/scoring.js';
 import type { Rapport } from '../core/types.js';
 import { emptyPilier, round1 } from '../core/types.js';
 import { auditSemantic } from '../semantic/index.js';
+import { ResponseCache } from '../visibility/cache.js';
+import { NOTE_TRANSPARENCE, auditVisibility } from '../visibility/index.js';
+import { buildProviders } from '../visibility/providers.js';
+import { QueriesFileError, loadIcpConfig } from '../visibility/queries.js';
 import { runInit } from './init.js';
 import { printPilier, printPilierAVenir } from './report.js';
 
@@ -50,6 +55,10 @@ program
   .option('--with-claude', 'Débloque le sous-critère 3.1 (+7 points, clé Claude requise)')
   .option('--deep', 'Sous-critère 4.3, sources tierces françaises (clé SerpAPI requise)')
   .option('--visibility', 'Active le Pilier 5 complet (au moins une clé LLM requise)')
+  .option(
+    '--queries <fichier>',
+    'Fichier de requêtes ICP pour --visibility (YAML par défaut, JSON selon l\'extension)',
+  )
   .option('--json <fichier>', 'Exporte le rapport JSON structuré')
   .option('--markdown <fichier>', 'Exporte le rapport au format markdown')
   .action(async (url: string, options: AuditOptions) => {
@@ -60,6 +69,7 @@ interface AuditOptions {
   withClaude?: boolean;
   deep?: boolean;
   visibility?: boolean;
+  queries?: string;
   json?: string;
   markdown?: string;
 }
@@ -135,20 +145,88 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
     }),
   ]);
 
+  // Pilier 5 (--visibility) : séquentiel, après les piliers statiques.
+  let visibilite = emptyPilier('visibilite_mesuree');
+  let visibilityRan = false;
+  if (options.visibility) {
+    const visNonTeste = (raison: string): void => {
+      visibilite.details.push({
+        critere: '5.1 Taux de citation sur panel de requêtes',
+        points_obtenus: 0,
+        points_max: 15,
+        methode:
+          'Requêtes ICP envoyées séquentiellement aux APIs configurées, détection de marque (regex + fuzzy), score = taux de citation × 15',
+        preuve: `Non testé : ${raison}`,
+        statut: 'non_teste',
+      });
+    };
+
+    if (!hasVisibilityProvider(ring)) {
+      visNonTeste('aucune clé LLM disponible (parallax init)');
+    } else if (!options.queries) {
+      console.log(
+        chalk.yellow('⚠ --visibility : fichier de requêtes manquant — passez --queries <fichier>.'),
+      );
+      visNonTeste('fichier de requêtes ICP manquant (--queries <fichier>)');
+    } else {
+      try {
+        const config = loadIcpConfig(options.queries);
+        const { providers, missing } = buildProviders(ring);
+        const cache = new ResponseCache(
+          path.join(process.cwd(), '.parallax', 'cache.sqlite'),
+        );
+        console.log(
+          chalk.dim(
+            `Pilier 5 : ${config.queries.length} requête(s) × ${providers.length} fournisseur(s) — ${providers.map((p) => p.id).join(', ')}`,
+          ),
+        );
+        try {
+          const result = await auditVisibility({
+            config,
+            providers,
+            missing,
+            cache,
+            log: (m) => console.log(chalk.dim(m)),
+          });
+          visibilite = result.pilier;
+          visibilityRan = true;
+        } finally {
+          cache.close();
+        }
+      } catch (err) {
+        if (err instanceof QueriesFileError) {
+          console.log(chalk.yellow(`⚠ --visibility : ${err.message}`));
+          visNonTeste(err.message);
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
   printPilier('Pilier 1 · Accessibilité IA', accessibilite);
   printPilier('Pilier 2 · Structure sémantique', semantique);
   printPilier('Pilier 3 · Citabilité du contenu', citabilite);
   printPilier('Pilier 4 · Autorité et entité', autorite);
-  printPilierAVenir('Pilier 5 · Visibilité mesurée', 'Phase 5');
+  if (options.visibility) {
+    printPilier('Pilier 5 · Visibilité mesurée', visibilite);
+    console.log('\n' + chalk.dim(NOTE_TRANSPARENCE));
+  } else {
+    printPilierAVenir('Pilier 5 · Visibilité mesurée', 'flag --visibility');
+  }
 
   const partiel = round1(
-    accessibilite.score + semantique.score + autorite.score + citabilite.score,
+    accessibilite.score +
+      semantique.score +
+      autorite.score +
+      citabilite.score +
+      visibilite.score,
   );
-  const maxPalier = withClaude ? 77 : 70;
+  const maxPalier = 70 + (withClaude ? 7 : 0) + (visibilityRan ? 15 : 0);
   console.log(
-    chalk.bold(`\nScore (palier ${withClaude ? '1' : '0'}) : ${partiel}/${maxPalier}`) +
+    chalk.bold(`\nScore : ${partiel}/${maxPalier}`) +
       chalk.dim(
-        ' — hors 4.3 (--deep) et Pilier 5 (--visibility) ; score /100 et niveaux en Phase 6\n',
+        ` — hors 4.3 (--deep)${visibilityRan ? '' : ' et Pilier 5 (--visibility)'} ; score /100 et niveaux en Phase 6\n`,
       ),
   );
 
@@ -165,7 +243,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
         structure_semantique: semantique,
         citabilite_contenu: citabilite,
         autorite_entite: autorite,
-        visibilite_mesuree: emptyPilier('visibilite_mesuree'),
+        visibilite_mesuree: visibilite,
       },
       recommandations: [],
     };

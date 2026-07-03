@@ -37,7 +37,8 @@
     "cheerio": "^1.2.0",
     "commander": "^15.0.0",
     "inquirer": "^14.0.2",
-    "playwright": "^1.61.1"
+    "playwright": "^1.61.1",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

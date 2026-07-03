@@ -46,6 +46,8 @@ Méthode : parsing DOM avec cheerio. Un seul H1 sur la page, 2 points. Absence d
 
 Méthode : extraction des blocs script type application/ld+json, parsing JSON, vérification des types présents. Organization ou LocalBusiness, 3 points. FAQPage, 3 points. Article ou BlogPosting, 2 points.
 
+Les sous-types officiels Schema.org courants sont reconnus au même titre que leur type parent (pas de correspondance stricte sur Organization/LocalBusiness seuls) : pour LocalBusiness — ProfessionalService, LegalService, Attorney, AccountingService, Restaurant, Store, MedicalBusiness, RealEstateAgent, HomeAndConstructionBusiness, Plumber, Electrician ; pour Article — NewsArticle, TechArticle, Report. La liste statique de référence est maintenue dans src/core/schema-types.ts, extensible en PR séparée.
+
 Validation optionnelle en v2 : appel au Rich Results Test de Google si une clé API est disponible.
 
 ### 2.3 Meta et Open Graph (3 points)
@@ -84,6 +86,8 @@ Méthode : recherche d'une date de publication ou de mise à jour via meta artic
 
 Méthode : extraire nom, adresse et téléphone depuis le Schema.org Organization et depuis le footer ou la page contact en texte brut. Comparer la cohérence entre les deux sources. 2 points par élément cohérent (nom, adresse, téléphone).
 
+Le bloc Schema.org source peut être un Organization, un LocalBusiness, ou l'un de leurs sous-types officiels reconnus (même liste statique que le critère 2.2, maintenue dans src/core/schema-types.ts).
+
 ### 4.2 Signaux E-E-A-T (6 points)
 
 Méthode : présence d'une page à propos (lien contenant "à propos", "about" ou "qui sommes-nous"), 2 points. Auteurs nommés sur le contenu via balise author ou Schema.org author, 2 points. Mentions légales avec SIRET visible, 2 points (critère adapté au contexte français).
@@ -104,7 +108,19 @@ Méthode : détection de la langue principale du contenu (librairie franc ou éq
 
 ### 5.1 Taux de citation sur panel de requêtes (15 points)
 
-Méthode : l'utilisateur fournit une liste de N requêtes représentatives de son ICP dans un fichier YAML ou JSON. L'outil interroge séquentiellement les APIs Claude, OpenAI et Perplexity (bring your own key) avec ces requêtes, analyse chaque réponse pour détecter le nom de marque ou le domaine (regex et fuzzy matching), calcule le taux de citation et la position moyenne quand la marque apparaît dans une liste.
+Méthode : l'utilisateur fournit une liste de N requêtes représentatives de son ICP dans un fichier YAML ou JSON. L'outil interroge séquentiellement les APIs Claude, OpenAI, Gemini et Perplexity (bring your own key) avec ces requêtes, analyse chaque réponse pour détecter le nom de marque ou le domaine (regex et fuzzy matching), calcule le taux de citation et la position moyenne quand la marque apparaît dans une liste. Seuls les fournisseurs pour lesquels une clé est configurée sont interrogés, les autres sont marqués "non testé, clé API absente".
+
+Schéma du fichier de requêtes ICP (YAML par défaut, pensé pour édition manuelle et commentaires ; JSON accepté selon l'extension du fichier) :
+
+```yaml
+brand: "ComplyPME"
+domain: "getcomplypme.com"
+queries:
+  - text: "meilleur outil de conformité AI Act pour PME"
+    category: "conformite"
+  - text: "comment savoir si mon entreprise est visible sur ChatGPT"
+    category: "geo"
+```
 
 Score = taux de citation multiplié par 15.
 
