@@ -2,7 +2,7 @@
 
 Toutes les décisions d'architecture notables sont documentées ici au fil de l'eau.
 
-## [Non publié]
+## [0.2.0] — 2026-07-05
 
 ### Requêtes ICP en ligne de commande (2026-07-05)
 
@@ -16,6 +16,10 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
   `--brand` sans `--query`, `--query` vide. Documenté dans le README
   (exemple alan.com) et la grille (deux méthodes en 5.1) ; vérifié en réel
   (1 requête inline via Claude, priorité du fichier, messages de garde).
+
+## [0.1.0] — 2026-07-04
+
+Première publication sur npm (parallax-geo).
 
 ### Correctifs de scoring issus de la validation partie a (2026-07-04)
 

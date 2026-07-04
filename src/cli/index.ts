@@ -48,7 +48,7 @@ program
     'Audit GEO (Generative Engine Optimization) — mesure la visibilité et la ' +
       'citabilité de votre site par les LLM. Fonctionne sans clé API.',
   )
-  .version('0.1.0');
+  .version('0.2.0');
 
 program
   .command('init')
