@@ -4,6 +4,22 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Pré-publication v1 (2026-07-04)
+
+- **npm** : le package n'est pas encore publié (aucune session npm sur la
+  machine, pas encore de remote GitHub) — le README documente l'installation
+  depuis les sources (`npm install && npm run build && npm link`) en
+  attendant `npm publish`.
+- **CI GitHub Actions** : `.github/workflows/ci.yml` — npm ci, build, tests
+  sur chaque push et pull request (Node 20, ubuntu-latest).
+- **`langue_detectee` branché** (critère 4.4, métadonnée non notée) :
+  dépendance `franc` sur le texte extrait de la page ; codes ISO 639-3
+  ramenés aux codes courts usuels (fr, en, de…), `indeterminee` sous
+  50 caractères ou si franc ne tranche pas.
+- **`--deep` marqué EXPÉRIMENTAL** dans l'aide du CLI (4.3 non implémenté,
+  toujours « non testé ») et section « Limites connues v1 » ajoutée au
+  README (mono-page, Pilier 5 validé en réel sur Claude uniquement, 4.3).
+
 ### Phase 6 — Score final, exports, README (2026-07-04)
 
 - **Score global /100 avec normalisation (décision produit, documentée dans la

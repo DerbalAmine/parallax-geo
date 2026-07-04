@@ -19,8 +19,10 @@ import { auditCitability } from '../citability/index.js';
 import { loadKeyRing } from '../core/config.js';
 import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
+import { detectLanguage } from '../core/language.js';
 import { buildRapport } from '../core/rapport.js';
 import { renderWithPlaywright } from '../core/render.js';
+import { extractText } from '../core/text.js';
 import { emptyPilier } from '../core/types.js';
 import { auditSemantic } from '../semantic/index.js';
 import { ResponseCache } from '../visibility/cache.js';
@@ -53,7 +55,10 @@ program
   .description('Audite une URL — sans clé API : score sur 70 points')
   .argument('<url>', 'URL du site à auditer')
   .option('--with-claude', 'Débloque le sous-critère 3.1 (+7 points, clé Claude requise)')
-  .option('--deep', 'Sous-critère 4.3, sources tierces françaises (clé SerpAPI requise)')
+  .option(
+    '--deep',
+    'EXPÉRIMENTAL — sous-critère 4.3, sources tierces françaises (non implémenté en v1, toujours « non testé »)',
+  )
   .option('--visibility', 'Active le Pilier 5 complet (au moins une clé LLM requise)')
   .option(
     '--queries <fichier>',
@@ -216,6 +221,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
 
   const rapport = buildRapport({
     url: parsed.href,
+    langueDetectee: detectLanguage(extractText(page.body)),
     piliers: {
       accessibilite_ia: accessibilite,
       structure_semantique: semantique,
