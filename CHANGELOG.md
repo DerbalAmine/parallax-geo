@@ -2,7 +2,7 @@
 
 Toutes les décisions d'architecture notables sont documentées ici au fil de l'eau.
 
-## [Non publié]
+## [0.2.1] — 2026-07-05
 
 ### `parallax init` écrit désormais la config dans le home (2026-07-05)
 
