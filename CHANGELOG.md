@@ -4,6 +4,19 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Requêtes ICP en ligne de commande (2026-07-05)
+
+- **Nouveaux flags pour `--visibility`** : `--brand "Nom"` + `--query
+  "question"` (répétable) permettent de tester le Pilier 5 sans créer de
+  fichier YAML ; `--domain "domaine.com"` optionnel (à défaut, l'hôte de
+  l'URL auditée). Le fichier `--queries` reste recommandé pour poser
+  plusieurs questions d'un coup ou réutiliser une config, et **prend
+  priorité** si les deux méthodes sont fournies (avertissement affiché,
+  flags ignorés). Erreurs actionnables : `--query` sans `--brand`,
+  `--brand` sans `--query`, `--query` vide. Documenté dans le README
+  (exemple alan.com) et la grille (deux méthodes en 5.1) ; vérifié en réel
+  (1 requête inline via Claude, priorité du fichier, messages de garde).
+
 ### Correctifs de scoring issus de la validation partie a (2026-07-04)
 
 - **1.2 anti soft-404** : le `Fetcher` expose désormais le content-type ;

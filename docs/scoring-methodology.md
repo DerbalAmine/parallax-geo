@@ -114,7 +114,14 @@ Méthode : détection de la langue principale du contenu (librairie franc ou éq
 
 ### 5.1 Taux de citation sur panel de requêtes (15 points)
 
-Méthode : l'utilisateur fournit une liste de N requêtes représentatives de son ICP dans un fichier YAML ou JSON. L'outil interroge séquentiellement les APIs Claude, OpenAI, Gemini et Perplexity (bring your own key) avec ces requêtes, analyse chaque réponse pour détecter le nom de marque ou le domaine (regex et fuzzy matching), calcule le taux de citation et la position moyenne quand la marque apparaît dans une liste. Seuls les fournisseurs pour lesquels une clé est configurée sont interrogés, les autres sont marqués "non testé, clé API absente".
+Méthode : l'utilisateur fournit une liste de N requêtes représentatives de son ICP. L'outil interroge séquentiellement les APIs Claude, OpenAI, Gemini et Perplexity (bring your own key) avec ces requêtes, analyse chaque réponse pour détecter le nom de marque ou le domaine (regex et fuzzy matching), calcule le taux de citation et la position moyenne quand la marque apparaît dans une liste. Seuls les fournisseurs pour lesquels une clé est configurée sont interrogés, les autres sont marqués "non testé, clé API absente".
+
+Deux méthodes pour fournir les requêtes :
+
+1. Fichier YAML ou JSON (`--queries <fichier>`) — recommandé pour tester plusieurs questions d'un coup ou réutiliser la même configuration entre audits.
+2. Ligne de commande — `--brand "Nom de la marque"` plus `--query "texte de la question"` (répétable pour poser plusieurs questions), et `--domain "domaine.com"` optionnel (à défaut, l'hôte de l'URL auditée). Pratique pour un test rapide sans créer de fichier.
+
+Si `--queries` et `--brand`/`--query` sont fournis en même temps, le fichier prend priorité et les flags sont ignorés (avertissement affiché).
 
 Schéma du fichier de requêtes ICP (YAML par défaut, pensé pour édition manuelle et commentaires ; JSON accepté selon l'extension du fichier) :
 

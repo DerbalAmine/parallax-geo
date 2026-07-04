@@ -93,6 +93,18 @@ audit avec le cache d'une journée) est le chemin le plus fiable.
 
 ### Le Pilier 5 en pratique
 
+Le plus rapide — tout en ligne de commande, sans fichier à créer :
+
+```bash
+parallax audit alan.com --visibility --brand "Alan" --query "meilleure assurance santé en France"
+```
+
+`--query` est répétable pour poser plusieurs questions, et `--domain` est optionnel
+(par défaut : le domaine de l'URL auditée).
+
+Pour tester plusieurs questions d'un coup ou réutiliser la même configuration entre
+audits, passez par un fichier (prioritaire si les deux méthodes sont fournies) :
+
 ```bash
 parallax audit https://exemple.fr --visibility --queries mes-requetes.yaml
 ```
@@ -224,6 +236,18 @@ voids the free tier. In that case a Claude or OpenAI key (paid, a few cents per 
 thanks to the one-day cache) is the most reliable path.
 
 ### Pillar 5 in practice
+
+Quickest — inline, no file needed:
+
+```bash
+parallax audit alan.com --visibility --brand "Alan" --query "best health insurance in France"
+```
+
+`--query` is repeatable to ask several questions, and `--domain` is optional
+(defaults to the audited URL's host).
+
+To run many questions at once or reuse the same configuration across audits, use a
+file (takes priority if both methods are provided):
 
 ```bash
 parallax audit https://example.com --visibility --queries my-queries.yaml

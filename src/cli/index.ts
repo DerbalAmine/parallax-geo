@@ -30,7 +30,12 @@ import { auditSemantic } from '../semantic/index.js';
 import { ResponseCache } from '../visibility/cache.js';
 import { NOTE_TRANSPARENCE, auditVisibility } from '../visibility/index.js';
 import { buildProviders } from '../visibility/providers.js';
-import { QueriesFileError, loadIcpConfig } from '../visibility/queries.js';
+import {
+  QueriesFileError,
+  hasInlineQueryFlags,
+  inlineIcpConfig,
+  loadIcpConfig,
+} from '../visibility/queries.js';
 import { runInit } from './init.js';
 import { renderMarkdown } from './markdown.js';
 import { printPilier, printScoreFinal } from './report.js';
@@ -61,7 +66,18 @@ program
   .option('--visibility', 'Active le Pilier 5 complet (au moins une clé LLM requise)')
   .option(
     '--queries <fichier>',
-    'Fichier de requêtes ICP pour --visibility (YAML par défaut, JSON selon l\'extension)',
+    'Fichier de requêtes ICP pour --visibility (YAML par défaut, JSON selon l\'extension) — prioritaire sur --brand/--query',
+  )
+  .option('--brand <nom>', 'Marque à détecter pour --visibility (alternative au fichier)')
+  .option(
+    '--domain <domaine>',
+    'Domaine de la marque pour --visibility (défaut : hôte de l\'URL auditée)',
+  )
+  .option(
+    '--query <texte>',
+    'Question ICP pour --visibility, répétable pour en poser plusieurs',
+    (valeur: string, precedentes: string[]) => [...precedentes, valeur],
+    [] as string[],
   )
   .option('--json <fichier>', 'Exporte le rapport JSON structuré')
   .option('--markdown <fichier>', 'Exporte le rapport au format markdown')
@@ -74,6 +90,9 @@ interface AuditOptions {
   deep?: boolean;
   visibility?: boolean;
   queries?: string;
+  brand?: string;
+  domain?: string;
+  query?: string[];
   json?: string;
   markdown?: string;
 }
@@ -175,19 +194,35 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
       statut: 'non_teste',
     });
   };
+  const inlineFlags = {
+    ...(options.brand !== undefined ? { brand: options.brand } : {}),
+    ...(options.domain !== undefined ? { domain: options.domain } : {}),
+    ...(options.query !== undefined ? { query: options.query } : {}),
+  };
   if (!options.visibility) {
     visNonTeste('flag --visibility non passé');
   } else {
     if (!hasVisibilityProvider(ring)) {
       visNonTeste('aucune clé LLM disponible (parallax init)');
-    } else if (!options.queries) {
+    } else if (!options.queries && !hasInlineQueryFlags(inlineFlags)) {
       console.log(
-        chalk.yellow('⚠ --visibility : fichier de requêtes manquant — passez --queries <fichier>.'),
+        chalk.yellow(
+          '⚠ --visibility : requêtes ICP manquantes — passez --queries <fichier>, ou --brand + --query en ligne de commande.',
+        ),
       );
-      visNonTeste('fichier de requêtes ICP manquant (--queries <fichier>)');
+      visNonTeste('requêtes ICP manquantes (--queries <fichier>, ou --brand + --query)');
     } else {
       try {
-        const config = loadIcpConfig(options.queries);
+        if (options.queries && hasInlineQueryFlags(inlineFlags)) {
+          console.log(
+            chalk.yellow(
+              '⚠ --queries et --brand/--query fournis ensemble : le fichier prend priorité, les flags sont ignorés.',
+            ),
+          );
+        }
+        const config = options.queries
+          ? loadIcpConfig(options.queries)
+          : inlineIcpConfig(inlineFlags, parsed.href);
         const { providers, missing } = buildProviders(ring);
         const cache = new ResponseCache(
           path.join(process.cwd(), '.parallax', 'cache.sqlite'),

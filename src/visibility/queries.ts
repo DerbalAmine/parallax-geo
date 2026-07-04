@@ -1,14 +1,16 @@
 /**
- * Fichier de requêtes ICP du Pilier 5 — parsing et validation.
+ * Requêtes ICP du Pilier 5 — parsing et validation.
  *
- * Schéma (docs/scoring-methodology.md, section Pilier 5) :
- *   brand: "ComplyPME"
- *   domain: "getcomplypme.com"
- *   queries:
- *     - text: "meilleur outil de conformité AI Act pour PME"
- *       category: "conformite"
- *
- * YAML par défaut ; JSON accepté si l'extension du fichier est .json.
+ * Deux sources possibles :
+ * 1. Fichier (--queries, prioritaire) — schéma docs/scoring-methodology.md :
+ *      brand: "ComplyPME"
+ *      domain: "getcomplypme.com"
+ *      queries:
+ *        - text: "meilleur outil de conformité AI Act pour PME"
+ *          category: "conformite"
+ *    YAML par défaut ; JSON accepté si l'extension du fichier est .json.
+ * 2. Ligne de commande — --brand "Nom" --query "question" (répétable),
+ *    --domain optionnel (à défaut : hôte de l'URL auditée).
  */
 
 import fs from 'node:fs';
@@ -99,4 +101,52 @@ export function loadIcpConfig(file: string): IcpConfig {
   }
   const format = path.extname(file).toLowerCase() === '.json' ? 'json' : 'yaml';
   return parseIcpConfig(raw, format);
+}
+
+/** Flags CLI équivalents au fichier de requêtes (--brand/--domain/--query). */
+export interface InlineQueryFlags {
+  brand?: string;
+  domain?: string;
+  /** Une entrée par occurrence de --query. */
+  query?: string[];
+}
+
+/** Au moins un flag inline est présent (déclenche la construction inline). */
+export function hasInlineQueryFlags(flags: InlineQueryFlags): boolean {
+  return Boolean(flags.brand?.trim()) || Boolean(flags.query?.length);
+}
+
+/**
+ * Construit la config ICP depuis les flags CLI. Sans --domain, le domaine
+ * est celui de l'URL auditée. Messages d'erreur orientés flags (pas fichier).
+ */
+export function inlineIcpConfig(
+  flags: InlineQueryFlags,
+  auditedUrl: string,
+): IcpConfig {
+  const brand = flags.brand?.trim();
+  const queries = (flags.query ?? []).map((q) => q.trim());
+  if (!brand && !queries.length) {
+    throw new QueriesFileError(
+      'Aucune requête ICP fournie : passez --queries <fichier>, ou --brand + --query',
+    );
+  }
+  if (!brand) {
+    throw new QueriesFileError(
+      '--query fourni sans --brand : précisez le nom de marque à détecter (--brand "Ma Marque")',
+    );
+  }
+  if (!queries.length || queries.some((q) => !q)) {
+    throw new QueriesFileError(
+      !queries.length
+        ? '--brand fourni sans --query : ajoutez au moins une question (--query "…", répétable)'
+        : '--query vide : chaque occurrence doit contenir une question',
+    );
+  }
+  const domain = flags.domain?.trim() || new URL(auditedUrl).hostname;
+  return validateIcpConfig({
+    brand,
+    domain,
+    queries: queries.map((text) => ({ text })),
+  });
 }
