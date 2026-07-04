@@ -37,16 +37,37 @@ export type PilierId =
   | 'autorite_entite'
   | 'visibilite_mesuree';
 
+/** Critère exclu du calcul (clé API absente, flag non passé, outil indisponible). */
+export interface CritereNonTeste {
+  pilier: PilierId;
+  critere: string;
+  raison: string;
+}
+
 export interface Rapport {
   url: string;
   audited_at: string;
   langue_detectee: string;
+  /** Score sur 100, normalisé sur les points testés, plafond appliqué. */
   score_global: number;
+  /** Somme brute des points obtenus sur les critères testés. */
+  score_brut: number;
+  /** Somme des points maximum des critères testés (dénominateur du score). */
+  score_max_teste: number;
   niveau: Niveau;
   plafond_applique: boolean;
   piliers: Record<PilierId, PilierResult>;
+  criteres_non_testes: CritereNonTeste[];
   recommandations: Recommandation[];
 }
+
+export const PILIER_TITRES: Record<PilierId, string> = {
+  accessibilite_ia: 'Pilier 1 · Accessibilité IA',
+  structure_semantique: 'Pilier 2 · Structure sémantique',
+  citabilite_contenu: 'Pilier 3 · Citabilité du contenu',
+  autorite_entite: 'Pilier 4 · Autorité et entité',
+  visibilite_mesuree: 'Pilier 5 · Visibilité mesurée',
+};
 
 export const PILIER_MAX: Record<PilierId, number> = {
   accessibilite_ia: 20,

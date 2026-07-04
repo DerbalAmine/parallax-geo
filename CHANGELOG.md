@@ -4,6 +4,34 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Phase 6 — Score final, exports, README (2026-07-04)
+
+- **Score global /100 avec normalisation (décision produit, documentée dans la
+  grille)** : les critères non testés sont exclus du calcul — le score sur 100
+  vaut score_brut / score_max_teste × 100, pour qu'un audit palier 0 puisse
+  atteindre tous les niveaux sans être pénalisé par les critères à clé API.
+  Ils sont listés à part dans le rapport (terminal, JSON `criteres_non_testes`,
+  markdown) avec leur raison. Le Pilier 5 sans `--visibility` apparaît
+  désormais comme critère non testé (schéma JSON stable dans tous les cas).
+- **Plafond conditionnel** : Pilier 1 < 10/20 ⇒ score plafonné à 40, message
+  exact de la grille affiché en rouge (terminal), en blockquote (markdown) et
+  via `plafond_applique` (JSON). Si un critère du Pilier 1 est non testé
+  (Playwright absent), le seuil s'évalue au prorata des points testés.
+- **Niveaux** vert (≥ 70) / jaune (≥ 40) / orange (≥ 20) / rouge, colorés dans
+  le terminal.
+- **Recommandations** : une par critère testé où des points manquent, triées
+  par points manquants décroissants ; priorité haute ≥ 4 pts, moyenne ≥ 2,
+  basse en dessous ; action concrète par critère (table dans
+  src/core/recommendations.ts) avec les points récupérables affichés.
+- **Exports** : JSON conforme au schéma de la grille (enrichi de score_brut,
+  score_max_teste, criteres_non_testes — schéma mis à jour dans la doc) ;
+  export markdown complet (`--markdown <fichier>`) : piliers en tableaux,
+  message de plafond, non testés, recommandations, note de transparence si le
+  Pilier 5 a tourné.
+- **README bilingue** (français d'abord) : « fonctionne sans clé API » en
+  tête, quickstart en 3 commandes, paliers 0/1/2, recommandation Gemini
+  nuancée par la contrainte de facturation UE constatée le même jour.
+
 ### Diagnostic Gemini + correctifs de visibilité des erreurs (2026-07-04)
 
 - **Gemini reste bloqué pour cette v1 ; Claude est la validation réelle du

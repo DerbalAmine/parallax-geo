@@ -19,17 +19,17 @@ import { auditCitability } from '../citability/index.js';
 import { loadKeyRing } from '../core/config.js';
 import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
+import { buildRapport } from '../core/rapport.js';
 import { renderWithPlaywright } from '../core/render.js';
-import { niveau } from '../core/scoring.js';
-import type { Rapport } from '../core/types.js';
-import { emptyPilier, round1 } from '../core/types.js';
+import { emptyPilier } from '../core/types.js';
 import { auditSemantic } from '../semantic/index.js';
 import { ResponseCache } from '../visibility/cache.js';
 import { NOTE_TRANSPARENCE, auditVisibility } from '../visibility/index.js';
 import { buildProviders } from '../visibility/providers.js';
 import { QueriesFileError, loadIcpConfig } from '../visibility/queries.js';
 import { runInit } from './init.js';
-import { printPilier, printPilierAVenir } from './report.js';
+import { renderMarkdown } from './markdown.js';
+import { printPilier, printScoreFinal } from './report.js';
 
 const program = new Command();
 
@@ -148,19 +148,20 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
   // Pilier 5 (--visibility) : séquentiel, après les piliers statiques.
   let visibilite = emptyPilier('visibilite_mesuree');
   let visibilityRan = false;
-  if (options.visibility) {
-    const visNonTeste = (raison: string): void => {
-      visibilite.details.push({
-        critere: '5.1 Taux de citation sur panel de requêtes',
-        points_obtenus: 0,
-        points_max: 15,
-        methode:
-          'Requêtes ICP envoyées séquentiellement aux APIs configurées, détection de marque (regex + fuzzy), score = taux de citation × 15',
-        preuve: `Non testé : ${raison}`,
-        statut: 'non_teste',
-      });
-    };
-
+  const visNonTeste = (raison: string): void => {
+    visibilite.details.push({
+      critere: '5.1 Taux de citation sur panel de requêtes',
+      points_obtenus: 0,
+      points_max: 15,
+      methode:
+        'Requêtes ICP envoyées séquentiellement aux APIs configurées, détection de marque (regex + fuzzy), score = taux de citation × 15',
+      preuve: `Non testé : ${raison}`,
+      statut: 'non_teste',
+    });
+  };
+  if (!options.visibility) {
+    visNonTeste('flag --visibility non passé');
+  } else {
     if (!hasVisibilityProvider(ring)) {
       visNonTeste('aucune clé LLM disponible (parallax init)');
     } else if (!options.queries) {
@@ -208,52 +209,31 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
   printPilier('Pilier 2 · Structure sémantique', semantique);
   printPilier('Pilier 3 · Citabilité du contenu', citabilite);
   printPilier('Pilier 4 · Autorité et entité', autorite);
-  if (options.visibility) {
-    printPilier('Pilier 5 · Visibilité mesurée', visibilite);
+  printPilier('Pilier 5 · Visibilité mesurée', visibilite);
+  if (visibilityRan) {
     console.log('\n' + chalk.dim(NOTE_TRANSPARENCE));
-  } else {
-    printPilierAVenir('Pilier 5 · Visibilité mesurée', 'flag --visibility');
   }
 
-  const partiel = round1(
-    accessibilite.score +
-      semantique.score +
-      autorite.score +
-      citabilite.score +
-      visibilite.score,
-  );
-  const maxPalier = 70 + (withClaude ? 7 : 0) + (visibilityRan ? 15 : 0);
-  console.log(
-    chalk.bold(`\nScore : ${partiel}/${maxPalier}`) +
-      chalk.dim(
-        ` — hors 4.3 (--deep)${visibilityRan ? '' : ' et Pilier 5 (--visibility)'} ; score /100 et niveaux en Phase 6\n`,
-      ),
-  );
+  const rapport = buildRapport({
+    url: parsed.href,
+    piliers: {
+      accessibilite_ia: accessibilite,
+      structure_semantique: semantique,
+      citabilite_contenu: citabilite,
+      autorite_entite: autorite,
+      visibilite_mesuree: visibilite,
+    },
+  });
+
+  printScoreFinal(rapport);
 
   if (options.json) {
-    const rapport: Rapport = {
-      url: parsed.href,
-      audited_at: new Date().toISOString(),
-      langue_detectee: 'indeterminee',
-      score_global: partiel,
-      niveau: niveau(partiel),
-      plafond_applique: false,
-      piliers: {
-        accessibilite_ia: accessibilite,
-        structure_semantique: semantique,
-        citabilite_contenu: citabilite,
-        autorite_entite: autorite,
-        visibilite_mesuree: visibilite,
-      },
-      recommandations: [],
-    };
     fs.writeFileSync(options.json, JSON.stringify(rapport, null, 2) + '\n');
     console.log(chalk.dim(`Rapport JSON écrit : ${options.json}`));
   }
   if (options.markdown) {
-    console.log(
-      chalk.yellow('Export markdown : disponible en Phase 6.'),
-    );
+    fs.writeFileSync(options.markdown, renderMarkdown(rapport));
+    console.log(chalk.dim(`Rapport markdown écrit : ${options.markdown}`));
   }
 }
 

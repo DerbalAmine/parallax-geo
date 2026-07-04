@@ -8,6 +8,8 @@ Score final = somme des 5 piliers (100 points), avec un plafond conditionnel.
 
 Plafond conditionnel : si le score du Pilier 1 (Accessibilité IA) est inférieur à 10 sur 20, le score final est plafonné à 40 sur 100, quel que soit le total des autres piliers. Le rapport doit alors afficher un message explicite : "Site non accessible aux crawlers IA, le reste du score est indicatif."
 
+Critères non testés (clé API absente, flag non passé, outil indisponible) : exclus du calcul. Le score sur 100 est normalisé sur le total des points effectivement testés (score_brut divisé par score_max_teste, multiplié par 100), pour qu'un audit palier 0 puisse atteindre tous les niveaux sans être pénalisé par les critères à clé API. Les critères exclus sont listés à part dans le rapport avec leur raison. Si un critère du Pilier 1 est non testé, le seuil du plafond s'évalue sur le score du Pilier 1 ramené sur 20 au prorata des points testés.
+
 Niveaux (cohérents avec le système ComplyPME) :
 1. Vert : score supérieur ou égal à 70
 2. Jaune : score supérieur ou égal à 40
@@ -137,9 +139,14 @@ Structure attendue pour le rapport, consommable par un formateur markdown ou une
   "url": "string",
   "audited_at": "ISO 8601 datetime",
   "langue_detectee": "string, ex: fr, en, indeterminee",
-  "score_global": "number 0-100",
+  "score_global": "number 0-100, normalisé sur les points testés, plafond appliqué",
+  "score_brut": "number, somme des points obtenus sur les critères testés",
+  "score_max_teste": "number, somme des points max des critères testés (dénominateur)",
   "niveau": "vert | jaune | orange | rouge",
   "plafond_applique": "boolean",
+  "criteres_non_testes": [
+    { "pilier": "string, id du pilier", "critere": "string", "raison": "string" }
+  ],
   "piliers": {
     "accessibilite_ia": { "score": "number", "max": 20, "details": [] },
     "structure_semantique": { "score": "number", "max": 20, "details": [] },
@@ -152,6 +159,8 @@ Structure attendue pour le rapport, consommable par un formateur markdown ou une
   ]
 }
 ```
+
+Recommandations : une par critère testé où des points manquent, triées par points manquants décroissants. Priorité : haute si 4 points ou plus manquent, moyenne à partir de 2, basse en dessous. Les critères non testés n'apparaissent pas en recommandation (ils sont déjà listés dans criteres_non_testes).
 
 Chaque objet dans un tableau "details" contient : critere (string), points_obtenus (number), points_max (number), methode (string), preuve (string ou extrait détecté).
 

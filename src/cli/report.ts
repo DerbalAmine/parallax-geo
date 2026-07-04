@@ -1,12 +1,12 @@
 /**
- * Affichage terminal du rapport — version Phase 2 (piliers 1 et 2).
- * Le formatage final (score global, plafond, recommandations, exports)
- * sera consolidé en Phase 6.
+ * Affichage terminal du rapport : piliers, score global /100 avec niveau et
+ * plafond conditionnel, critères non testés à part, recommandations.
  */
 
 import chalk from 'chalk';
 
-import type { PilierResult } from '../core/types.js';
+import { PLAFOND_MESSAGE } from '../core/scoring.js';
+import type { Niveau, PilierResult, Rapport, Recommandation } from '../core/types.js';
 
 function couleurScore(score: number, max: number): (s: string) => string {
   const ratio = max === 0 ? 0 : score / max;
@@ -31,8 +31,46 @@ export function printPilier(titre: string, result: PilierResult): void {
   }
 }
 
-export function printPilierAVenir(titre: string, phase: string): void {
+const COULEUR_NIVEAU: Record<Niveau, (s: string) => string> = {
+  vert: chalk.green,
+  jaune: chalk.yellow,
+  orange: chalk.hex('#ff8800'),
+  rouge: chalk.red,
+};
+
+const COULEUR_PRIORITE: Record<Recommandation['priorite'], (s: string) => string> = {
+  haute: chalk.red,
+  moyenne: chalk.yellow,
+  basse: chalk.dim,
+};
+
+export function printScoreFinal(rapport: Rapport): void {
+  const c = COULEUR_NIVEAU[rapport.niveau];
   console.log(
-    chalk.bold(`\n${titre}`) + chalk.dim(` — à venir (${phase})`),
+    chalk.bold(`\nScore global : ${c(`${rapport.score_global}/100`)} — niveau ${c(rapport.niveau.toUpperCase())}`),
   );
+  if (rapport.plafond_applique) {
+    console.log(chalk.red(`⚠ ${PLAFOND_MESSAGE}`));
+  }
+  console.log(
+    chalk.dim(
+      `Score brut : ${rapport.score_brut} points sur ${rapport.score_max_teste} testés — critères non testés exclus du calcul.`,
+    ),
+  );
+
+  if (rapport.criteres_non_testes.length) {
+    console.log(chalk.bold('\nCritères non testés :'));
+    for (const nt of rapport.criteres_non_testes) {
+      console.log(chalk.dim(`  · ${nt.critere} — ${nt.raison}`));
+    }
+  }
+
+  if (rapport.recommandations.length) {
+    console.log(chalk.bold('\nRecommandations (par points manquants) :'));
+    for (const r of rapport.recommandations) {
+      const badge = COULEUR_PRIORITE[r.priorite](`[${r.priorite}]`.padEnd(9));
+      console.log(`  ${badge} ${r.action}`);
+    }
+  }
+  console.log('');
 }
