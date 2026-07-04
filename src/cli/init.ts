@@ -4,10 +4,15 @@
  * - Détecte les variables d'environnement existantes (elles restent la
  *   source prioritaire et ne sont jamais copiées dans le fichier).
  * - Propose de saisir les clés manquantes, stockées dans
- *   `.parallax/config.json` (ignoré par git, permissions 0600).
+ *   `~/.parallax/config.json` (global : les clés servent tous les audits,
+ *   quel que soit le dossier d'exécution ; permissions 0600). Un
+ *   `.parallax/config.json` de projet reste lu en priorité s'il existe.
  * - Tout est optionnel : Parallax fonctionne sans aucune clé (palier 0,
  *   score sur 70 points).
  */
+
+import os from 'node:os';
+import path from 'node:path';
 
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -16,18 +21,18 @@ import { loadFileConfig, saveFileConfig } from '../core/config.js';
 import type { FileConfig, ProviderId } from '../core/keys.js';
 import { PROVIDERS, detectEnvKey, hasVisibilityProvider, resolveKeys } from '../core/keys.js';
 
-export async function runInit(cwd: string = process.cwd()): Promise<void> {
+export async function runInit(home: string = os.homedir()): Promise<void> {
   console.log(chalk.bold('\nParallax — configuration des clés API\n'));
   console.log(
     'Toutes les clés sont optionnelles : ' +
       chalk.green('l\'audit de base fonctionne sans aucune clé') +
       ' (score sur 70 points).\n' +
       'Les clés saisies ici sont stockées dans ' +
-      chalk.cyan('.parallax/config.json') +
-      ' (local, ignoré par git).\n',
+      chalk.cyan(path.join(home, '.parallax', 'config.json')) +
+      ' (global, ignoré par git) et servent tous les audits, quel que soit le dossier.\n',
   );
 
-  const existing = loadFileConfig(cwd);
+  const existing = loadFileConfig(home);
   const keys: NonNullable<FileConfig['keys']> = { ...existing.keys };
 
   for (const provider of PROVIDERS) {
@@ -80,7 +85,7 @@ export async function runInit(cwd: string = process.cwd()): Promise<void> {
   }
 
   const config: FileConfig = { ...existing, keys };
-  const file = saveFileConfig(cwd, config);
+  const file = saveFileConfig(home, config);
 
   const ring = resolveKeys(process.env, config);
   const configured = PROVIDERS.filter((p) => ring[p.id]);

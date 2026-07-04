@@ -152,9 +152,6 @@ complète, critère par critère). Le markdown reprend le même contenu, mis en 
   plateformes — constaté sur malt.fr et blablacar.fr) refusent les requêtes
   automatisées (HTTP 403). L'audit s'arrête proprement avec le code d'erreur, mais
   aucun score ne peut être produit pour ces sites.
-- **Sous-critère 4.3 non validé en réel** (présence sur sources tierces françaises,
-  `--deep` + clé SerpAPI) : implémenté et couvert par les tests, mais jamais exercé
-  avec une vraie clé SerpAPI. Retour d'expérience bienvenu en issue.
 
 ### Licence
 
@@ -283,9 +280,6 @@ French). The markdown export renders the same content for humans.
 - **Bot-protected sites cannot be audited**: some sites (often large platforms —
   observed on malt.fr and blablacar.fr) reject automated requests (HTTP 403). The audit
   stops cleanly with the error code, but no score can be produced for those sites.
-- **Criterion 4.3 not field-validated** (third-party French sources, `--deep` +
-  SerpAPI key): implemented and unit-tested, but never exercised with a real SerpAPI
-  key. Feedback welcome via issues.
 
 ### License
 

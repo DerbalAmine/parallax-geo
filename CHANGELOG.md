@@ -2,6 +2,25 @@
 
 Toutes les décisions d'architecture notables sont documentées ici au fil de l'eau.
 
+## [Non publié]
+
+### `parallax init` écrit désormais la config dans le home (2026-07-05)
+
+- **Bug** : `init` écrivait `.parallax/config.json` dans le dossier
+  courant — les clés s'éparpillaient selon l'endroit où l'assistant était
+  lancé (constaté en réel : Claude présent dans la config home ET projet,
+  SerpAPI uniquement dans celle du projet ⇒ `--deep` disait « clé
+  absente » depuis le home alors que `--with-claude` fonctionnait).
+- **Correctif** : `init` lit et écrit `~/.parallax/config.json` (config
+  machine, servie partout). La résolution reste inchangée : variables
+  d'environnement > `.parallax/` du dossier courant (override projet) >
+  `~/.parallax/`. Les configs de la machine de dev ont été consolidées
+  (clés projet fusionnées vers le home).
+- **Première validation en réel du 4.3** au passage : `parallax audit
+  apple.com --deep` depuis le home ⇒ 8/8 (Wikipedia fr, Pages Jaunes +
+  Kompass, 6 articles de presse) — la limite « 4.3 non validé en réel »
+  est retirée du README.
+
 ## [0.2.0] — 2026-07-05
 
 ### Requêtes ICP en ligne de commande (2026-07-05)
