@@ -35,7 +35,7 @@ async function postJson(
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) {
-    const detail = (await res.text()).slice(0, 200);
+    const detail = (await res.text()).replace(/\s+/g, ' ').trim().slice(0, 600);
     throw new Error(`HTTP ${res.status} — ${detail}`);
   }
   return res.json();
@@ -93,6 +93,14 @@ export function openaiProvider(apiKey: string): VisibilityProvider {
 }
 
 export function geminiProvider(apiKey: string): VisibilityProvider {
+  // Les clés « Vertex AI express » (préfixe AQ.) sont refusées par l'API
+  // Gemini classique ; seul l'endpoint Vertex les accepte. Même schéma de
+  // requête/réponse (GenerateContent) dans les deux cas.
+  const url = apiKey.startsWith('AQ.')
+    ? (model: string) =>
+        `https://aiplatform.googleapis.com/v1/publishers/google/models/${model}:generateContent`
+    : (model: string) =>
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   return {
     id: 'gemini',
     label: 'Gemini (Google)',
@@ -101,7 +109,7 @@ export function geminiProvider(apiKey: string): VisibilityProvider {
     minIntervalMs: 6_500,
     async ask(query) {
       const data = await postJson(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`,
+        url(this.model),
         { 'x-goog-api-key': apiKey },
         { contents: [{ role: 'user', parts: [{ text: query }] }] },
       );

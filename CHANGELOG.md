@@ -4,6 +4,31 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Diagnostic Gemini + correctifs de visibilité des erreurs (2026-07-04)
+
+- **Gemini reste bloqué pour cette v1 ; Claude est la validation réelle du
+  Pilier 5.** Constats du diagnostic (clés AI Studio réelles, deux comptes,
+  trois projets Google) : les nouvelles clés AI Studio sont au format
+  « auth key » `AQ.` (format officiel 2026, remplace `AIza`) ; sur l'API
+  Gemini classique, la liste des modèles répond mais `generateContent`
+  renvoie `403 PERMISSION_DENIED — "Your project has been denied access"`
+  (blocage projet non documenté, connu des forums Google) ; le chemin
+  alternatif Vertex exige la facturation (`403 BILLING_DISABLED`) — en
+  pratique, pour ce compte UE, Gemini requiert une facturation Google
+  active. À retester une fois la facturation activée (le code est prêt,
+  voir fallback ci-dessous) ; la doc doit nuancer « palier gratuit
+  permanent » pour les comptes UE.
+- **Les erreurs d'appel du Pilier 5 étaient invisibles** dès qu'un autre
+  fournisseur réussissait (symptôme : « gemini 0/0 (5 échecs) » sans aucun
+  message). Correctifs : chaque échec est loggé en direct dans le CLI avec
+  son message complet ; la preuve du critère 5.1 inclut désormais l'erreur
+  du fournisseur en échec même quand le taux de citation est calculable ;
+  le corps des erreurs HTTP n'est plus tronqué à 200 caractères (600,
+  espaces compactés).
+- **Fallback Vertex pour les clés `AQ.`** : `geminiProvider` détecte le
+  préfixe et bascule sur `aiplatform.googleapis.com` (même schéma
+  GenerateContent) au lieu de `generativelanguage.googleapis.com`.
+
 ### Correctifs post-Phase 5 (2026-07-03)
 
 - **`parallax init` plantait au lancement** (`UnknownPromptTypeError`) :

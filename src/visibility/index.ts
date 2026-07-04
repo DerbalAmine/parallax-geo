@@ -97,7 +97,9 @@ export async function auditVisibility(
           input.cache.set(cacheKey, query.text, day, response);
         } catch (err) {
           run.failed++;
-          run.erreur ??= err instanceof Error ? err.message : String(err);
+          const message = err instanceof Error ? err.message : String(err);
+          run.erreur ??= message;
+          log(`    ✗ ${provider.label} : ${message}`);
           continue;
         }
       }
@@ -131,7 +133,7 @@ export async function auditVisibility(
   const parFournisseur = runs
     .map(
       (r) =>
-        `${r.id} ${r.cited}/${r.ok}${r.failed ? ` (${r.failed} échec(s))` : ''}`,
+        `${r.id} ${r.cited}/${r.ok}${r.failed ? ` (${r.failed} échec(s) — ${r.erreur})` : ''}`,
     )
     .join(', ');
   const nonTestes = input.missing.length
