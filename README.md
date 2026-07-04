@@ -27,8 +27,8 @@ parallax init   # optionnel : configurer des clés API pour débloquer plus de c
 C'est tout : la première commande installe l'outil, la deuxième produit un audit complet
 sans aucune clé API, la troisième (optionnelle) débloque les critères avancés.
 
-> Le package n'est pas encore publié sur npm. En attendant, installation depuis les
-> sources : `git clone <ce dépôt> && cd parallax && npm install && npm run build && npm link`.
+> Contributeurs : installation depuis les sources —
+> `git clone <ce dépôt> && cd parallax && npm install && npm run build && npm link`.
 
 > Prérequis : Node.js ≥ 20. Le critère « contenu accessible sans JavaScript » utilise
 > Playwright (`npx playwright install chromium` si nécessaire) ; sans navigateur, ce
@@ -174,7 +174,7 @@ parallax init   # optional: configure API keys to unlock more criteria
 That's it: install, run a full audit with zero API keys, and optionally unlock the
 advanced criteria.
 
-> Not yet published to npm. Meanwhile, install from source:
+> Contributors: install from source —
 > `git clone <this repo> && cd parallax && npm install && npm run build && npm link`.
 
 > Requires Node.js ≥ 20. The "content without JavaScript" criterion uses Playwright
