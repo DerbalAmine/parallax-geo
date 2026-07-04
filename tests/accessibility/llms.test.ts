@@ -52,4 +52,35 @@ describe('checkLlmsTxt', () => {
     );
     expect(res.points).toBe(0);
   });
+
+  it('0 point sur un soft-404 : content-type text/html rejeté', async () => {
+    const res = await checkLlmsTxt('https://exemple.fr', async () => ({
+      ok: true,
+      status: 200,
+      body: 'contenu quelconque',
+      contentType: 'text/html; charset=UTF-8',
+    }));
+    expect(res.points).toBe(0);
+    expect(res.found).toBe(false);
+  });
+
+  it('0 point sur un soft-404 : contenu HTML rejeté même sans content-type', async () => {
+    const res = await checkLlmsTxt(
+      'https://exemple.fr',
+      fakeFetcher({
+        '/llms.txt': { status: 200, body: '<!DOCTYPE html>\n<html lang="fr">…' },
+      }),
+    );
+    expect(res.points).toBe(0);
+  });
+
+  it('5 points avec un content-type text/plain explicite', async () => {
+    const res = await checkLlmsTxt('https://exemple.fr', async () => ({
+      ok: true,
+      status: 200,
+      body: '# Mon site\n> Description',
+      contentType: 'text/plain; charset=utf-8',
+    }));
+    expect(res.points).toBe(5);
+  });
 });

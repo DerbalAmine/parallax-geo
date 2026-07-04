@@ -10,6 +10,8 @@ export interface FetchResult {
   ok: boolean;
   status: number;
   body: string;
+  /** En-tête Content-Type de la réponse, si connu. */
+  contentType?: string;
 }
 
 export type Fetcher = (url: string) => Promise<FetchResult>;
@@ -26,7 +28,13 @@ export const httpFetch: Fetcher = async (url) => {
       redirect: 'follow',
       signal: AbortSignal.timeout(15_000),
     });
-    return { ok: res.ok, status: res.status, body: await res.text() };
+    const contentType = res.headers.get('content-type');
+    return {
+      ok: res.ok,
+      status: res.status,
+      body: await res.text(),
+      ...(contentType ? { contentType } : {}),
+    };
   } catch {
     // Réseau injoignable, DNS, timeout : traité comme une ressource absente.
     return { ok: false, status: 0, body: '' };

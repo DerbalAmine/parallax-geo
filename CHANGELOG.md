@@ -4,6 +4,36 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Correctifs de scoring issus de la validation partie a (2026-07-04)
+
+- **1.2 anti soft-404** : le `Fetcher` expose désormais le content-type ;
+  `/llms.txt` est rejeté si le content-type est text/html ou si le contenu
+  commence par du HTML (serveur qui renvoie sa page avec un code 200 pour
+  n'importe quel chemin — cas expertise-bp.fr).
+- **3.2 anti faux positifs** : téléphones FR, SIRET/SIREN et codes postaux
+  (5 chiffres nus sans unité) neutralisés avant le comptage des data
+  points ; les liens externes vers les plateformes sociales, magasins
+  d'applications et cartes ne valent plus « source » ; densité calculée
+  sur un plancher de 300 mots pour qu'une page quasi vide ne sature pas
+  le critère.
+- **Panel revalidé après correctifs** (jugement aveugle → score avant →
+  après) : webtensor bon 67,6 → 62,6 ; complypme moyen 60,3 → 60,3 ;
+  qonto moyen 51,1 → 51,1 ; sitehop moyen 49,6 → 44,7 ; legalstart moyen
+  52 → 42,9 ; anthropic moyen 40,1 → 40,1 ; expertise-bp **faible 57 →
+  41** ; doctolib faible 38,6 → 38,1 ; hr-associes faible 37,7 → 37,7.
+  Les moyennes par groupe restent monotones (faible 38,9 < moyen 47,8 <
+  bon 62,6) et l'anomalie expertise-bp est résorbée ; toutes les baisses
+  correspondent à des chiffres auto-déclarés non sourcés relevés par
+  l'évaluation aveugle (aucune pénalisation indue).
+- **Limites connues acceptées, sans correction supplémentaire (décision
+  produit)** : (1) le recouvrement marginal expertise-bp (faible, 41) /
+  anthropic (moyen, 40,1) — 0,9 point, dans la marge de bruit d'un
+  échantillon de 9 sites ; (2) l'artefact résiduel 3.2 sur les pages très
+  courtes à liens externes peu nombreux (doctolib, 151 mots : 2 data
+  points « sourcés » donnent encore 6,7/7), sans effet sur l'ordre du
+  panel. Ne pas ajuster davantage ces deux cas : sur-optimiser le modèle
+  sur un échantillon aussi restreint dégraderait sa généralisation.
+
 ### Validation partie a — cohérence des Piliers 1-4 (2026-07-04)
 
 Protocole : évaluation qualitative en aveugle de l'hygiène technique GEO
