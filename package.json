@@ -13,7 +13,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "parallax": "./bin/parallax.js"
+    "parallax": "bin/parallax.js"
   },
   "main": "./dist/index.js",
   "files": [
