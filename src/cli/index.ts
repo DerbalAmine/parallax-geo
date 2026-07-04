@@ -14,6 +14,7 @@ import { Command } from 'commander';
 
 import { auditAccessibility } from '../accessibility/index.js';
 import { auditAuthority } from '../authority/index.js';
+import { serpApiSearch } from '../authority/third-party.js';
 import { buildClaudeClassifier } from '../citability/direct-answers.js';
 import { auditCitability } from '../citability/index.js';
 import { loadKeyRing } from '../core/config.js';
@@ -134,7 +135,18 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
       renderer: renderWithPlaywright,
     }),
     Promise.resolve(auditSemantic(page.body)),
-    auditAuthority({ url: parsed.href, staticHtml: page.body, fetcher: httpFetch }),
+    auditAuthority({
+      url: parsed.href,
+      staticHtml: page.body,
+      fetcher: httpFetch,
+      ...(options.deep && ring.serpapi
+        ? { thirdPartySearch: serpApiSearch(ring.serpapi.key) }
+        : {
+            thirdPartyAbsentReason: options.deep
+              ? 'clé SerpAPI absente (parallax init)'
+              : 'flag --deep non passé',
+          }),
+    }),
     auditCitability({
       url: parsed.href,
       staticHtml: page.body,

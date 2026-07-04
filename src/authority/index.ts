@@ -1,22 +1,27 @@
 /**
  * Pilier 4 — Autorité et entité (20 points).
  *
- * Phase 3 : 4.1 (cohérence NAP) et 4.2 (E-E-A-T), zéro clé API.
- * 4.3 (sources tierces françaises, --deep + clé SerpAPI) : à venir,
- * marqué non testé en attendant. 4.4 (langue) est une métadonnée non
- * notée, portée par le rapport global.
+ * 4.1 (cohérence NAP) et 4.2 (E-E-A-T) : zéro clé API. 4.3 (sources tierces
+ * françaises) : recherche SerpAPI injectée par le CLI quand --deep et une
+ * clé sont présents, sinon non testé avec la raison. 4.4 (langue) est une
+ * métadonnée non notée, portée par le rapport global.
  */
 
 import type { Fetcher } from '../core/fetch.js';
 import type { CritereDetail, PilierResult } from '../core/types.js';
 import { round1 } from '../core/types.js';
 import { evaluateEeat } from './eeat.js';
-import { evaluateNap } from './nap.js';
+import { evaluateNap, extractSchemaNap } from './nap.js';
+import type { SearchFn } from './third-party.js';
+import { entityNameFromUrl, evaluateThirdParty } from './third-party.js';
 
 export interface AuthorityInput {
   url: string;
   staticHtml: string;
   fetcher: Fetcher;
+  /** Recherche SerpAPI pour 4.3 (--deep) ; absente ⇒ non testé avec la raison. */
+  thirdPartySearch?: SearchFn;
+  thirdPartyAbsentReason?: string;
 }
 
 export async function auditAuthority(
@@ -57,16 +62,40 @@ export async function auditAuthority(
     preuve: preuves.join(' ; '),
   });
 
-  // 4.3 Sources tierces françaises — implémentation à venir (--deep)
-  details.push({
-    critere: '4.3 Présence sur sources tierces',
-    points_obtenus: 0,
-    points_max: 8,
-    methode:
-      'Recherche web (SerpAPI) : Wikipedia, annuaires français, presse française — flag --deep',
-    preuve: 'Non testé : nécessite le flag --deep et une clé SerpAPI (implémentation à venir)',
-    statut: 'non_teste',
-  });
+  // 4.3 Sources tierces françaises (--deep + clé SerpAPI)
+  const methode43 =
+    'Recherche web (SerpAPI) sur le nom d\'entité : Wikipedia 2 pts, annuaires français (Societe.com, Infogreffe, Pages Jaunes, Kompass) 2 pts, presse via actualités 4 pts (≥ 3 articles, 2 pts pour 1-2)';
+  if (input.thirdPartySearch) {
+    const entityName = extractSchemaNap(input.staticHtml)?.name ?? entityNameFromUrl(input.url);
+    try {
+      const tiers = await evaluateThirdParty(entityName, input.thirdPartySearch);
+      details.push({
+        critere: '4.3 Présence sur sources tierces',
+        points_obtenus: tiers.points,
+        points_max: 8,
+        methode: methode43,
+        preuve: tiers.preuve,
+      });
+    } catch (err) {
+      details.push({
+        critere: '4.3 Présence sur sources tierces',
+        points_obtenus: 0,
+        points_max: 8,
+        methode: methode43,
+        preuve: `Non testé : erreur SerpAPI — ${err instanceof Error ? err.message : String(err)}`,
+        statut: 'non_teste',
+      });
+    }
+  } else {
+    details.push({
+      critere: '4.3 Présence sur sources tierces',
+      points_obtenus: 0,
+      points_max: 8,
+      methode: methode43,
+      preuve: `Non testé : ${input.thirdPartyAbsentReason ?? 'flag --deep non passé'}`,
+      statut: 'non_teste',
+    });
+  }
 
   const score = round1(details.reduce((sum, d) => sum + d.points_obtenus, 0));
   return { score, max: 20, details };
