@@ -36,7 +36,21 @@ sans aucune clé API, la troisième (optionnelle) débloque les critères avanc�
 
 ### Le score
 
-L'audit note votre site sur 100 points répartis en 5 piliers :
+**Ce que le score mesure — et ce qu'il ne mesure pas.** Le score de préparation GEO
+mesure la préparation technique de votre site à être cité par les LLM, pas la
+probabilité réelle de citation : celle-ci dépend surtout de facteurs hors de portée d'un
+audit technique (notoriété de la marque, présence dans les corpus d'entraînement,
+couverture presse). C'est pourquoi Parallax rapporte **deux chiffres distincts** :
+
+- le **score de préparation GEO** (sur 100) — les Piliers 1 à 4, les leviers techniques
+  sur lesquels vous pouvez agir ;
+- la **citation mesurée aujourd'hui** (Pilier 5) — combien de réponses LLM citent
+  réellement votre marque sur vos requêtes ICP. C'est un signal complémentaire, pas une
+  validation du score de préparation : un site techniquement irréprochable peut ne pas
+  être cité (marque récente), une grande marque peut être citée malgré une hygiène GEO
+  moyenne.
+
+L'audit note la préparation sur 4 piliers techniques, le cinquième mesure la citation :
 
 | Pilier | Points | Ce qui est mesuré |
 | --- | --- | --- |
@@ -44,11 +58,11 @@ L'audit note votre site sur 100 points répartis en 5 piliers :
 | 2 · Structure sémantique | 20 | hiérarchie Hn, Schema.org, meta/Open Graph, format Q/R |
 | 3 · Citabilité du contenu | 25 | réponses directes, chiffres sourcés, définitions, fraîcheur |
 | 4 · Autorité et entité | 20 | cohérence NAP, signaux E-E-A-T, sources tierces |
-| 5 · Visibilité mesurée | 15 | taux de citation réel de votre marque par les LLM |
+| 5 · Visibilité mesurée | à part | taux de citation réel de votre marque par les LLM |
 
-Niveaux : **vert** (≥ 70), **jaune** (≥ 40), **orange** (≥ 20), **rouge** (< 20).
-Si le Pilier 1 est sous 10/20, le score est plafonné à 40 : un site inaccessible aux
-crawlers IA ne peut pas être bien classé, quel que soit son contenu.
+Niveaux du score de préparation : **vert** (≥ 70), **jaune** (≥ 40), **orange** (≥ 20),
+**rouge** (< 20). Si le Pilier 1 est sous 10/20, le score est plafonné à 40 : un site
+inaccessible aux crawlers IA ne peut pas être bien classé, quel que soit son contenu.
 
 Les critères qui nécessitent une clé absente sont **exclus du calcul** (le score sur 100
 est normalisé sur les points réellement testés) et listés à part dans le rapport — un
@@ -63,7 +77,7 @@ supplémentaires, jamais à obtenir un premier résultat.
 | --- | --- | --- |
 | **0** | aucune | Piliers 1, 2, 4 (hors 4.3) et 3 (hors 3.1) — un score complet et actionnable |
 | **1** | Claude | critère 3.1, réponses directes en début de section (`--with-claude`) |
-| **2** | au choix | Pilier 5, visibilité mesurée (`--visibility`, au moins une clé parmi Claude, OpenAI, Gemini, Perplexity) ; critère 4.3, sources tierces françaises (`--deep`, clé SerpAPI, à venir) |
+| **2** | au choix | Pilier 5, visibilité mesurée (`--visibility`, au moins une clé parmi Claude, OpenAI, Gemini, Perplexity) ; critère 4.3, sources tierces françaises (`--deep`, clé SerpAPI) |
 
 Configuration : `parallax init` (stockage local dans `.parallax/config.json`, ignoré par
 git) ou variables d'environnement (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
@@ -122,9 +136,13 @@ complète, critère par critère). Le markdown reprend le même contenu, mis en 
   et Perplexity sont implémentées et testées unitairement, mais n'ont pas encore été
   exercées de bout en bout avec de vraies clés (Gemini : voir la nuance facturation UE
   ci-dessus). Retour d'expérience bienvenu en issue.
-- **Sous-critère 4.3 non implémenté** (présence sur sources tierces françaises) : le
-  flag `--deep` est expérimental, le critère apparaît toujours « non testé » et est
-  exclu du calcul.
+- **Sites protégés par anti-bot non auditables** : certains sites (souvent les grandes
+  plateformes — constaté sur malt.fr et blablacar.fr) refusent les requêtes
+  automatisées (HTTP 403). L'audit s'arrête proprement avec le code d'erreur, mais
+  aucun score ne peut être produit pour ces sites.
+- **Sous-critère 4.3 non validé en réel** (présence sur sources tierces françaises,
+  `--deep` + clé SerpAPI) : implémenté et couvert par les tests, mais jamais exercé
+  avec une vraie clé SerpAPI. Retour d'expérience bienvenu en issue.
 
 ### Licence
 
@@ -165,9 +183,21 @@ advanced criteria.
 
 ### Scoring
 
-Your site is scored out of 100 points across 5 pillars: AI accessibility (20), semantic
-structure (20), content citability (25), authority & entity (20), measured visibility
-(15). Levels: **green** (≥ 70), **yellow** (≥ 40), **orange** (≥ 20), **red** (< 20).
+**What the score measures — and what it doesn't.** The GEO readiness score measures how
+technically prepared your site is to be cited by LLMs, not the actual probability of
+citation: that mostly depends on factors beyond the reach of a technical audit (brand
+awareness, presence in training corpora, press coverage). This is why Parallax reports
+**two distinct numbers**:
+
+- the **GEO readiness score** (out of 100) — pillars 1 to 4, the technical levers you
+  can act on: AI accessibility (20), semantic structure (20), content citability (25),
+  authority & entity (20);
+- **measured citation today** (pillar 5) — how many LLM answers actually cite your brand
+  on your ICP queries. It's a complementary signal, not a validation of the readiness
+  score: a technically flawless site may not be cited (young brand), a famous brand may
+  be cited despite mediocre GEO hygiene.
+
+Readiness levels: **green** (≥ 70), **yellow** (≥ 40), **orange** (≥ 20), **red** (< 20).
 If pillar 1 scores below 10/20, the total is capped at 40 — a site AI crawlers cannot
 read will not rank, whatever its content.
 
@@ -181,7 +211,7 @@ report — an audit without keys is never penalized nor interrupted.
 | --- | --- | --- |
 | **0** | none | pillars 1, 2, 4 (except 4.3) and 3 (except 3.1) — a complete, actionable score |
 | **1** | Claude | criterion 3.1, direct answers at the top of each section (`--with-claude`) |
-| **2** | your pick | pillar 5, measured visibility (`--visibility`, any of Claude, OpenAI, Gemini, Perplexity); criterion 4.3, third-party sources (`--deep`, SerpAPI key, upcoming) |
+| **2** | your pick | pillar 5, measured visibility (`--visibility`, any of Claude, OpenAI, Gemini, Perplexity); criterion 4.3, third-party sources (`--deep`, SerpAPI key) |
 
 Configure with `parallax init` or environment variables (`ANTHROPIC_API_KEY`,
 `OPENAI_API_KEY`, `GEMINI_API_KEY`, `PERPLEXITY_API_KEY`).
@@ -226,8 +256,12 @@ French). The markdown export renders the same content for humans.
 - **Pillar 5 validated end-to-end with Claude only.** OpenAI, Gemini and Perplexity
   integrations are implemented and unit-tested but not yet exercised with real keys
   (Gemini: see the EU billing caveat above). Feedback welcome via issues.
-- **Criterion 4.3 not implemented** (third-party French sources): the `--deep` flag is
-  experimental, the criterion always shows as untested and is excluded from the score.
+- **Bot-protected sites cannot be audited**: some sites (often large platforms —
+  observed on malt.fr and blablacar.fr) reject automated requests (HTTP 403). The audit
+  stops cleanly with the error code, but no score can be produced for those sites.
+- **Criterion 4.3 not field-validated** (third-party French sources, `--deep` +
+  SerpAPI key): implemented and unit-tested, but never exercised with a real SerpAPI
+  key. Feedback welcome via issues.
 
 ### License
 

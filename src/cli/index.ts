@@ -20,6 +20,7 @@ import { loadKeyRing } from '../core/config.js';
 import { httpFetch } from '../core/fetch.js';
 import { hasVisibilityProvider } from '../core/keys.js';
 import { detectLanguage } from '../core/language.js';
+import type { CitationStats } from '../core/rapport.js';
 import { buildRapport } from '../core/rapport.js';
 import { renderWithPlaywright } from '../core/render.js';
 import { extractText } from '../core/text.js';
@@ -55,10 +56,7 @@ program
   .description('Audite une URL — sans clé API : score sur 70 points')
   .argument('<url>', 'URL du site à auditer')
   .option('--with-claude', 'Débloque le sous-critère 3.1 (+7 points, clé Claude requise)')
-  .option(
-    '--deep',
-    'EXPÉRIMENTAL — sous-critère 4.3, sources tierces françaises (non implémenté en v1, toujours « non testé »)',
-  )
+  .option('--deep', 'Sous-critère 4.3, sources tierces françaises (clé SerpAPI requise)')
   .option('--visibility', 'Active le Pilier 5 complet (au moins une clé LLM requise)')
   .option(
     '--queries <fichier>',
@@ -153,6 +151,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
   // Pilier 5 (--visibility) : séquentiel, après les piliers statiques.
   let visibilite = emptyPilier('visibilite_mesuree');
   let visibilityRan = false;
+  let citationStats: CitationStats | undefined;
   const visNonTeste = (raison: string): void => {
     visibilite.details.push({
       critere: '5.1 Taux de citation sur panel de requêtes',
@@ -195,6 +194,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
             log: (m) => console.log(chalk.dim(m)),
           });
           visibilite = result.pilier;
+          citationStats = result.stats;
           visibilityRan = true;
         } finally {
           cache.close();
@@ -222,6 +222,7 @@ async function runAudit(url: string, options: AuditOptions): Promise<void> {
   const rapport = buildRapport({
     url: parsed.href,
     langueDetectee: detectLanguage(extractText(page.body)),
+    ...(citationStats ? { citationStats } : {}),
     piliers: {
       accessibilite_ia: accessibilite,
       structure_semantique: semantique,

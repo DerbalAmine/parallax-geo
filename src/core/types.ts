@@ -44,18 +44,35 @@ export interface CritereNonTeste {
   raison: string;
 }
 
+/**
+ * Pilier 5 rapporté à part : la citation réelle actuelle est un signal
+ * complémentaire, jamais additionné au score de préparation GEO.
+ */
+export type CitationMesuree =
+  | { statut: 'non_mesuree'; raison: string }
+  | {
+      statut: 'mesuree';
+      reponses: number;
+      citations: number;
+      taux: number;
+      position_moyenne: number | null;
+      /** Barème propre du Pilier 5 : taux × 15. */
+      score: number;
+    };
+
 export interface Rapport {
   url: string;
   audited_at: string;
   langue_detectee: string;
-  /** Score sur 100, normalisé sur les points testés, plafond appliqué. */
+  /** Score de préparation GEO (Piliers 1-4) sur 100, normalisé sur les points testés, plafond appliqué. */
   score_global: number;
-  /** Somme brute des points obtenus sur les critères testés. */
+  /** Somme brute des points obtenus sur les critères testés des Piliers 1-4. */
   score_brut: number;
-  /** Somme des points maximum des critères testés (dénominateur du score). */
+  /** Somme des points maximum des critères testés des Piliers 1-4 (dénominateur du score). */
   score_max_teste: number;
   niveau: Niveau;
   plafond_applique: boolean;
+  citation_mesuree: CitationMesuree;
   piliers: Record<PilierId, PilierResult>;
   criteres_non_testes: CritereNonTeste[];
   recommandations: Recommandation[];

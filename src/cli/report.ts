@@ -47,16 +47,32 @@ const COULEUR_PRIORITE: Record<Recommandation['priorite'], (s: string) => string
 export function printScoreFinal(rapport: Rapport): void {
   const c = COULEUR_NIVEAU[rapport.niveau];
   console.log(
-    chalk.bold(`\nScore global : ${c(`${rapport.score_global}/100`)} — niveau ${c(rapport.niveau.toUpperCase())}`),
+    chalk.bold(`\nScore de préparation GEO : ${c(`${rapport.score_global}/100`)} — niveau ${c(rapport.niveau.toUpperCase())}`),
   );
   if (rapport.plafond_applique) {
     console.log(chalk.red(`⚠ ${PLAFOND_MESSAGE}`));
   }
   console.log(
     chalk.dim(
-      `Score brut : ${rapport.score_brut} points sur ${rapport.score_max_teste} testés — critères non testés exclus du calcul.`,
+      `Piliers 1 à 4 : ${rapport.score_brut} points sur ${rapport.score_max_teste} testés — critères non testés exclus du calcul.`,
     ),
   );
+
+  const cm = rapport.citation_mesuree;
+  if (cm.statut === 'mesuree') {
+    const couleur = cm.citations > 0 ? chalk.green : chalk.red;
+    console.log(
+      chalk.bold('Citation mesurée aujourd\'hui : ') +
+        couleur(`${cm.citations}/${cm.reponses} réponses LLM citent la marque`) +
+        (cm.position_moyenne !== null ? ` (position moyenne ${cm.position_moyenne})` : '') +
+        chalk.dim(' — signal complémentaire, hors score de préparation'),
+    );
+  } else {
+    console.log(
+      chalk.bold('Citation mesurée aujourd\'hui : ') +
+        chalk.dim(`non mesurée — ${cm.raison}`),
+    );
+  }
 
   if (rapport.criteres_non_testes.length) {
     console.log(chalk.bold('\nCritères non testés :'));

@@ -4,6 +4,102 @@ Toutes les décisions d'architecture notables sont documentées ici au fil de l'
 
 ## [Non publié]
 
+### Validation partie a — cohérence des Piliers 1-4 (2026-07-04)
+
+Protocole : évaluation qualitative en aveugle de l'hygiène technique GEO
+(structure Hn, richesse Schema.org, fraîcheur, sourcing des chiffres) des
+9 sites du panel, par 9 agents indépendants analysant uniquement le HTML
+brut, sans accès aux scores de l'outil. Échelle : faible / moyen / bon /
+excellent. Comparaison ensuite avec le score de préparation (Piliers 1-4).
+
+| Site | Jugement aveugle | Score outil /100 |
+| --- | --- | --- |
+| webtensor.fr | bon | 67,6 |
+| complypme.fr | moyen | 60,3 |
+| legalstart.fr | moyen | 52 |
+| qonto.com | moyen | 51,1 |
+| sitehop.fr | moyen | 49,6 |
+| anthropic.com | moyen | 40,1 |
+| expertise-bp.fr | **faible** | **57** ← anomalie |
+| doctolib.fr | faible | 38,6 |
+| hr-associes.fr | faible | 37,7 |
+
+**Verdict : cohérent dans l'ensemble.** Moyennes par groupe monotones —
+faible 44,4 < moyen 50,6 < bon 67,6 — et 8 sites sur 9 correctement
+ordonnés (le « bon » domine tous les « moyens », qui dominent les
+« faibles »), à une exception près.
+
+**Écart identifié : expertise-bp.fr (jugé faible, scoré 57), causé par
+deux artefacts de critères, vérifiés :**
+
+1. **1.2 faux positif soft-404** : le site renvoie sa page HTML avec un
+   code 200 pour n'importe quel chemin — l'outil a validé « /llms.txt
+   présent (46 352 caractères) » alors que c'est la page d'accueil
+   (content-type text/html, vérifié au curl). +5 points indus. Correctif
+   à prévoir : exiger un content-type texte ou rejeter un contenu qui
+   commence par du HTML.
+2. **3.2 faux positifs sur les data points** : « 22/49 data points sourcés
+   sur 1180 mots (densité 18,6/1000) ⇒ 7/7 » alors que l'évaluation
+   aveugle ne trouve aucun chiffre sourcé — les numéros de téléphone,
+   codes postaux et le SIRET comptent comme data points, et la proximité
+   d'un simple lien de navigation vaut « source ». Le même artefact donne
+   7/7 à doctolib.fr sur 151 mots de footer (3/3 data points « sourcés »
+   par des liens de navigation, densité 19,9/1000) : sur une page quasi
+   vide, une base de texte minuscule gonfle la densité. Correctifs à
+   prévoir : plancher de mots avant de calculer la densité, exclusion des
+   motifs téléphone/code postal/SIRET, et « source » restreinte aux liens
+   externes ou aux expressions de sourcing.
+
+Corrigé de ces deux artefacts, expertise-bp.fr redescendrait à ≈ 40/100,
+sous tous les « moyens » — l'ordre serait alors intégralement cohérent.
+
+### Validation partie b — cohérence du Pilier 5 (2026-07-04)
+
+Vérification manuelle effectuée par l'utilisateur sur les interfaces
+réelles (ChatGPT.com, Perplexity.ai) : Doctolib et Qonto sont cités sur
+leurs questions sectorielles (rendez-vous médical, banque en ligne),
+ComplyPME est absent sur les siennes. **Résultat cohérent** avec la mesure
+API du Pilier 5 (Doctolib/Qonto cités par l'API Claude sur les mêmes types
+de requêtes lors du pré-test du panel, ComplyPME 0/5 sur ses requêtes
+ICP). Les deux parties du protocole de validation sont donc exécutées et
+concluantes.
+
+### Repositionnement du score + validation invalidée + 4.3 (2026-07-04)
+
+- **La validation « cités vs non cités » sur le score composite est invalidée
+  et retirée comme preuve de fiabilité.** Protocole exécuté : prémisse
+  vérifiée avec l'API Claude (5 sites notoires cités dans leur niche, 5
+  petits sites non cités), audits palier 0 sur les 10. Résultat inversé :
+  cités 45,4/100 de moyenne (doctolib 38,6, legalstart 52, qonto 51,1,
+  anthropic 40,1), non cités 54,4/100 (complypme 60,3, expertise-bp 57,
+  sitehop 49,6, webtensor 67,6, hr-associes 37,7). Causes : le critère
+  réellement corrélé à la citation (4.3, présence tierce) n'était pas
+  implémenté ; llms.txt (5 pts) n'est adopté par aucun site notoire ; les
+  petits sites vitrines statiques passent trivialement le Pilier 1. malt.fr
+  et blablacar.fr, très cités, n'ont pas pu être audités (anti-bot, 403).
+- **Nouveau positionnement (décision produit)** : le score composite mesure
+  la préparation technique GEO, pas la probabilité de citation — paragraphe
+  ajouté à la grille, README FR/EN mis à jour. Le Pilier 5 devient un signal
+  complémentaire rapporté à part : « Score de préparation GEO x/100 »
+  (Piliers 1-4 normalisés) et « Citation mesurée aujourd'hui x/n requêtes »
+  (CLI, JSON `citation_mesuree`, markdown) — plus jamais un seul chiffre qui
+  mélange les deux. Les recommandations ne portent que sur les leviers
+  techniques des Piliers 1-4.
+- **Nouveau protocole de validation** (remplace l'ancien, documenté dans la
+  grille) : (a) cohérence des Piliers 1-4 — évaluation manuelle de l'hygiène
+  technique de 5 sites par un humain, indépendamment de leur notoriété,
+  comparée au classement de l'outil ; (b) cohérence du Pilier 5 —
+  vérification manuelle sur ChatGPT.com et Perplexity.ai pour 3 marques
+  connues et 3 inconnues, comparée au taux mesuré par API. À exécuter avant
+  le tag v1.
+- **4.3 implémenté** (amélioration indépendante, pas un correctif de la
+  validation) : trois recherches SerpAPI sur le nom d'entité (Schema.org, à
+  défaut racine du domaine) — Wikipedia 2 pts, annuaires français
+  (Societe.com, Infogreffe, Pages Jaunes, Kompass) 2 pts, presse via
+  actualités 4 pts (≥ 3 articles ; 2 pts pour 1-2). Recherche injectable
+  (tests sans réseau), erreur SerpAPI ⇒ non testé sans interrompre l'audit.
+  Non validé en réel faute de clé SerpAPI sur la machine.
+
 ### Pré-publication v1 (2026-07-04)
 
 - **npm** : le package n'est pas encore publié (aucune session npm sur la

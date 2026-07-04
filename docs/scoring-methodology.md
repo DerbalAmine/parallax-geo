@@ -4,11 +4,15 @@ Spec fonctionnelle destinée à devenir l'input direct d'une session Claude Code
 
 ## Formule globale
 
-Score final = somme des 5 piliers (100 points), avec un plafond conditionnel.
+Ce score mesure la préparation technique du site à être cité, pas la probabilité réelle de citation, qui dépend surtout de facteurs hors de portée d'un audit technique (notoriété, présence dans les corpus d'entraînement). Le Pilier 5 mesure la citation réelle actuelle et doit être lu comme un signal complémentaire, pas comme une validation du reste du score.
+
+Score de préparation GEO = somme des Piliers 1 à 4 (85 points), normalisée sur 100, avec un plafond conditionnel. Le Pilier 5 (citation mesurée, 15 points) est rapporté à part — jamais additionné dans le score de préparation.
 
 Plafond conditionnel : si le score du Pilier 1 (Accessibilité IA) est inférieur à 10 sur 20, le score final est plafonné à 40 sur 100, quel que soit le total des autres piliers. Le rapport doit alors afficher un message explicite : "Site non accessible aux crawlers IA, le reste du score est indicatif."
 
-Critères non testés (clé API absente, flag non passé, outil indisponible) : exclus du calcul. Le score sur 100 est normalisé sur le total des points effectivement testés (score_brut divisé par score_max_teste, multiplié par 100), pour qu'un audit palier 0 puisse atteindre tous les niveaux sans être pénalisé par les critères à clé API. Les critères exclus sont listés à part dans le rapport avec leur raison. Si un critère du Pilier 1 est non testé, le seuil du plafond s'évalue sur le score du Pilier 1 ramené sur 20 au prorata des points testés.
+Critères non testés (clé API absente, flag non passé, outil indisponible) : exclus du calcul. Le score de préparation sur 100 est normalisé sur le total des points effectivement testés des Piliers 1 à 4 (score_brut divisé par score_max_teste, multiplié par 100), pour qu'un audit palier 0 puisse atteindre tous les niveaux sans être pénalisé par les critères à clé API. Les critères exclus sont listés à part dans le rapport avec leur raison. Si un critère du Pilier 1 est non testé, le seuil du plafond s'évalue sur le score du Pilier 1 ramené sur 20 au prorata des points testés.
+
+Le Pilier 5 apparaît dans le rapport sous la forme « citation mesurée aujourd'hui » : x réponses sur n citent la marque, position moyenne le cas échéant, ou la raison pour laquelle il n'a pas été mesuré. Il conserve son barème propre (taux de citation × 15) mais n'entre ni dans le score de préparation, ni dans les recommandations (qui ne portent que sur les leviers techniques des Piliers 1 à 4).
 
 Niveaux (cohérents avec le système ComplyPME) :
 1. Vert : score supérieur ou égal à 70
@@ -139,13 +143,22 @@ Structure attendue pour le rapport, consommable par un formateur markdown ou une
   "url": "string",
   "audited_at": "ISO 8601 datetime",
   "langue_detectee": "string, ex: fr, en, indeterminee",
-  "score_global": "number 0-100, normalisé sur les points testés, plafond appliqué",
-  "score_brut": "number, somme des points obtenus sur les critères testés",
-  "score_max_teste": "number, somme des points max des critères testés (dénominateur)",
+  "score_global": "number 0-100 — score de préparation GEO (Piliers 1-4), normalisé sur les points testés, plafond appliqué",
+  "score_brut": "number, somme des points obtenus sur les critères testés des Piliers 1-4",
+  "score_max_teste": "number, somme des points max des critères testés des Piliers 1-4 (dénominateur)",
   "niveau": "vert | jaune | orange | rouge",
   "plafond_applique": "boolean",
+  "citation_mesuree": {
+    "statut": "mesuree | non_mesuree",
+    "raison": "string, si non mesurée",
+    "reponses": "number, réponses LLM exploitables (si mesurée)",
+    "citations": "number, réponses citant la marque (si mesurée)",
+    "taux": "number 0-1 (si mesurée)",
+    "position_moyenne": "number ou null (si mesurée)",
+    "score": "number sur 15 (si mesurée) — jamais additionné au score de préparation"
+  },
   "criteres_non_testes": [
-    { "pilier": "string, id du pilier", "critere": "string", "raison": "string" }
+    { "pilier": "string, id du pilier (Piliers 1-4)", "critere": "string", "raison": "string" }
   ],
   "piliers": {
     "accessibilite_ia": { "score": "number", "max": 20, "details": [] },
@@ -160,7 +173,7 @@ Structure attendue pour le rapport, consommable par un formateur markdown ou une
 }
 ```
 
-Recommandations : une par critère testé où des points manquent, triées par points manquants décroissants. Priorité : haute si 4 points ou plus manquent, moyenne à partir de 2, basse en dessous. Les critères non testés n'apparaissent pas en recommandation (ils sont déjà listés dans criteres_non_testes).
+Recommandations : une par critère testé des Piliers 1 à 4 où des points manquent, triées par points manquants décroissants. Priorité : haute si 4 points ou plus manquent, moyenne à partir de 2, basse en dessous. Les critères non testés n'apparaissent pas en recommandation (ils sont déjà listés dans criteres_non_testes), et le Pilier 5 non plus (la citation mesurée n'est pas un levier technique).
 
 Chaque objet dans un tableau "details" contient : critere (string), points_obtenus (number), points_max (number), methode (string), preuve (string ou extrait détecté).
 
@@ -176,7 +189,10 @@ Ordre de développement suggéré :
 3. Pilier 3, sous-critères 3.2, 3.3 et 3.4 (heuristiques), puis 3.1 (nécessite l'API Claude).
 4. Pilier 5, le plus complexe (multi-API, cache, rate limiting), à construire en dernier une fois le reste stable.
 
-Validation du modèle avant de coder quoi que ce soit : tester la grille à la main sur 10 sites (5 reconnus comme cités par les LLM dans leur niche, 5 qui ne le sont pas). Si les sites cités scorent nettement plus haut, le modèle tient. Sinon, ajuster les pondérations avant de lancer le développement.
+Validation du modèle : le protocole initial (comparer le score composite de 5 sites cités par les LLM et de 5 sites non cités) a été exécuté le 2026-07-04 et invalidé — les non-cités scoraient plus haut, car le score mesure la préparation technique et non la notoriété (voir CHANGELOG). Il est remplacé par deux vérifications distinctes :
+
+1. Cohérence des Piliers 1 à 4 : évaluation manuelle de l'hygiène technique de 5 sites (indépendamment de leur notoriété) par un humain, puis comparaison avec les scores de l'outil. Le score de préparation est fiable si le classement manuel et le classement outil concordent.
+2. Cohérence du Pilier 5 : vérification manuelle sur ChatGPT.com et Perplexity.ai pour 3 marques connues et 3 inconnues — le taux de citation mesuré par API doit aller dans le même sens que ce qu'un utilisateur constate dans les interfaces réelles.
 
 ## Licence et positionnement open source
 

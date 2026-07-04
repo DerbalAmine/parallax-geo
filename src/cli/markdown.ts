@@ -22,7 +22,7 @@ export function renderMarkdown(rapport: Rapport): string {
   lines.push(`Audité le ${date} avec Parallax (parallax-geo).`);
   lines.push('');
   lines.push(
-    `**Score global : ${rapport.score_global}/100 — niveau ${rapport.niveau.toUpperCase()}**`,
+    `**Score de préparation GEO : ${rapport.score_global}/100 — niveau ${rapport.niveau.toUpperCase()}**`,
   );
   lines.push('');
   if (rapport.plafond_applique) {
@@ -30,8 +30,17 @@ export function renderMarkdown(rapport: Rapport): string {
     lines.push('');
   }
   lines.push(
-    `Score brut : ${rapport.score_brut} points sur ${rapport.score_max_teste} testés` +
+    `Piliers 1 à 4 : ${rapport.score_brut} points sur ${rapport.score_max_teste} testés` +
       ' (les critères non testés sont exclus du calcul).',
+  );
+  lines.push('');
+  const cm = rapport.citation_mesuree;
+  lines.push(
+    '**Citation mesurée aujourd\'hui** (Pilier 5 — signal complémentaire, hors score de préparation) : ' +
+      (cm.statut === 'mesuree'
+        ? `${cm.citations}/${cm.reponses} réponses LLM citent la marque` +
+          (cm.position_moyenne !== null ? ` (position moyenne ${cm.position_moyenne})` : '')
+        : `non mesurée — ${cm.raison}`),
   );
 
   for (const [id, pilier] of Object.entries(rapport.piliers) as Array<

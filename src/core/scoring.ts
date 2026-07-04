@@ -1,6 +1,10 @@
 /**
  * Formule globale — voir docs/scoring-methodology.md, section « Formule globale ».
  *
+ * Score de préparation GEO = Piliers 1 à 4 uniquement ; le Pilier 5 (citation
+ * mesurée) est rapporté à part, jamais additionné — il mesure la citation
+ * réelle actuelle, pas un levier technique.
+ *
  * Critères non testés : exclus du calcul. Le score sur 100 est normalisé sur
  * le total des points effectivement testés (score_brut / score_max_teste × 100),
  * pour qu'un audit palier 0 puisse atteindre les niveaux sans être pénalisé
@@ -61,6 +65,8 @@ export function computeScore(
   for (const [id, pilier] of Object.entries(piliers) as Array<
     [PilierId, PilierResult]
   >) {
+    // Le Pilier 5 est rapporté à part (citation_mesuree), hors préparation.
+    if (id === 'visibilite_mesuree') continue;
     for (const d of pilier.details) {
       if (d.statut === 'non_teste') {
         nonTestes.push({

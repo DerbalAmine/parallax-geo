@@ -1,8 +1,9 @@
 /**
- * Recommandations du rapport — une par critère testé où des points manquent,
- * triées par points manquants décroissants (la priorité suit le manque :
- * ≥ 4 points haute, ≥ 2 moyenne, sinon basse). Les critères non testés ne
- * génèrent pas de recommandation : ils sont listés à part dans le rapport.
+ * Recommandations du rapport — une par critère testé des Piliers 1 à 4 où des
+ * points manquent, triées par points manquants décroissants (la priorité suit
+ * le manque : ≥ 4 points haute, ≥ 2 moyenne, sinon basse). Les critères non
+ * testés ne génèrent pas de recommandation (listés à part dans le rapport),
+ * le Pilier 5 non plus : la citation mesurée n'est pas un levier technique.
  */
 
 import type { PilierId, PilierResult, Recommandation } from './types.js';
@@ -38,8 +39,6 @@ const ACTIONS: Record<string, string> = {
     'Renforcez les signaux E-E-A-T : page à propos, auteurs nommés, SIRET visible dans les mentions légales',
   '4.3':
     'Développez votre présence sur les sources tierces françaises (Wikipedia, Societe.com, Pages Jaunes Pro, presse)',
-  '5.1':
-    'Créez ou renforcez les contenus répondant aux requêtes de votre ICP où votre marque n\'est pas citée par les LLM',
 };
 
 function priorite(manque: number): Recommandation['priorite'] {
@@ -53,7 +52,8 @@ export function buildRecommandations(
 ): Recommandation[] {
   const candidats: Array<Recommandation & { manque: number }> = [];
 
-  for (const pilier of Object.values(piliers)) {
+  for (const [id, pilier] of Object.entries(piliers)) {
+    if (id === 'visibilite_mesuree') continue;
     for (const d of pilier.details) {
       if (d.statut === 'non_teste') continue;
       const manque = round1(d.points_max - d.points_obtenus);

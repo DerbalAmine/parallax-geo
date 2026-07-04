@@ -93,11 +93,11 @@ describe('computeScore', () => {
       accessibilite_ia: [
         detail({ critere: '1.1 Robots.txt', points_obtenus: 8, points_max: 8 }),
       ],
-      visibilite_mesuree: [
+      citabilite_contenu: [
         detail({
-          critere: '5.1 Taux de citation',
-          points_max: 15,
-          preuve: 'Non testé : flag --visibility non passé',
+          critere: '3.1 Réponses directes',
+          points_max: 7,
+          preuve: 'Non testé : flag --with-claude non passé',
           statut: 'non_teste',
         }),
       ],
@@ -105,12 +105,28 @@ describe('computeScore', () => {
     const score = computeScore(p);
     expect(score.criteres_non_testes).toEqual([
       {
-        pilier: 'visibilite_mesuree',
-        critere: '5.1 Taux de citation',
-        raison: 'flag --visibility non passé',
+        pilier: 'citabilite_contenu',
+        critere: '3.1 Réponses directes',
+        raison: 'flag --with-claude non passé',
       },
     ]);
     expect(score.score_max_teste).toBe(8);
+  });
+
+  it('exclut entièrement le Pilier 5 : ni score de préparation, ni non testés', () => {
+    const p = piliers({
+      accessibilite_ia: [
+        detail({ critere: '1.1 Robots.txt', points_obtenus: 4, points_max: 8 }),
+      ],
+      visibilite_mesuree: [
+        detail({ critere: '5.1 Taux de citation', points_obtenus: 15, points_max: 15 }),
+      ],
+    });
+    const score = computeScore(p);
+    // 4/8 seulement : les 15 points du Pilier 5 n'entrent pas dans le calcul.
+    expect(score.score_brut).toBe(4);
+    expect(score.score_max_teste).toBe(8);
+    expect(score.criteres_non_testes).toEqual([]);
   });
 
   it('applique le plafond à 40 quand le Pilier 1 est sous 10/20', () => {

@@ -66,8 +66,41 @@ describe('buildRapport', () => {
       'autorite_entite',
       'visibilite_mesuree',
     ]);
-    expect(rapport.criteres_non_testes).toHaveLength(1);
+    // Le Pilier 5 non testé est porté par citation_mesuree, pas par la liste
+    // des critères non testés (réservée aux Piliers 1-4).
+    expect(rapport.criteres_non_testes).toEqual([]);
+    expect(rapport.citation_mesuree).toEqual({
+      statut: 'non_mesuree',
+      raison: 'flag --visibility non passé',
+    });
     expect(rapport.recommandations).toEqual([]);
+  });
+
+  it('reporte les stats de citation quand le Pilier 5 a tourné', () => {
+    const rapport = buildRapport({
+      ...BASE,
+      citationStats: {
+        totalReponses: 5,
+        citations: 2,
+        tauxCitation: 0.4,
+        positionMoyenne: 1.5,
+      },
+      piliers: piliers({
+        visibilite_mesuree: [
+          detail({ critere: '5.1 Taux de citation', points_obtenus: 6, points_max: 15 }),
+        ],
+      }),
+    });
+    expect(rapport.citation_mesuree).toEqual({
+      statut: 'mesuree',
+      reponses: 5,
+      citations: 2,
+      taux: 0.4,
+      position_moyenne: 1.5,
+      score: 6,
+    });
+    // Et le score de préparation ne compte pas ces 15 points.
+    expect(rapport.score_max_teste).toBe(0);
   });
 });
 
@@ -89,12 +122,22 @@ describe('renderMarkdown', () => {
               statut: 'non_teste',
             }),
           ],
+          visibilite_mesuree: [
+            detail({
+              critere: '5.1 Taux de citation sur panel de requêtes',
+              points_max: 15,
+              preuve: 'Non testé : flag --visibility non passé',
+              statut: 'non_teste',
+            }),
+          ],
         }),
       }),
     );
     expect(md).toContain('# Rapport d\'audit GEO — https://exemple.fr/');
     expect(md).toContain('Audité le 2026-07-04');
-    expect(md).toContain('**Score global : 61.5/100 — niveau JAUNE**');
+    expect(md).toContain('**Score de préparation GEO : 61.5/100 — niveau JAUNE**');
+    expect(md).toContain('**Citation mesurée aujourd\'hui**');
+    expect(md).toContain('non mesurée — flag --visibility non passé');
     expect(md).toContain('## Pilier 1 · Accessibilité IA — 8/20');
     expect(md).toContain('| 1.1 Robots.txt | 8/8 | preuve de test |');
     expect(md).toContain('| 3.1 Réponses directes | non testé |');
